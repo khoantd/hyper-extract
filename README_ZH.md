@@ -39,251 +39,198 @@ Hyper-Extract 是一个智能的、由大语言模型（LLM）驱动的知识提
 
 ## ✨ 核心亮点
 
-- 🔷 **8大基础知识结构数据结构（Auto-Types）：** 从基础的 `AutoModel`/`AutoList` 到高阶的 `AutoGraph`, `AutoHypergraph`, 以及 `AutoSpatioTemporalGraph`（时空图）。
-- 🧠 **10+ 前沿提取引擎：** 开箱即用整合了业界顶尖的检索范式，例如 `GraphRAG`、`LightRAG`、`Hyper-RAG` 和 `KG-Gen`。
-- 📝 **声明式 YAML 模板：** 零代码定义提取策略。内置覆盖 6 大领域的 80+ 预设模板。
-- 🔄 **知识增量演进：** 支持动态喂入新文档（Feed），让提取的知识图谱自动补全和扩展。
+| | |
+|:---|:---|
+| 🔷 **8 种知识结构** | 从简单的列表到复杂的图谱、超图、时空图谱 |
+| 🧠 **10+ 提取引擎** | GraphRAG、LightRAG、Hyper-RAG、KG-Gen 等开箱即用 |
+| 📝 **80+ YAML 模板** | 零代码提取，覆盖金融、法律、医疗、中医、工业、通用 6 大领域 |
+| 🔄 **增量演进** | 随时喂入新文档，自动扩展和精炼知识库 |
 
-***
+## 🎯 它能做什么？
 
-## ⚡ 快速上手
+<details>
+<summary><b>📄 科研人员 — 将论文转为知识图谱</b></summary>
+<br>
 
-### 1. 安装
-
-**CLI 用户**（全局安装 `he` 命令）：
+丢进去一篇 20 页的学术论文，一键生成关键概念、作者、引用的交互式图谱。
 
 ```bash
-uv tool install hyperextract
+he parse paper.pdf -t general/academic_graph -o ./paper_kb/
+he show ./paper_kb/
 ```
 
-**Python 开发者**（作为库使用）：
+</details>
+
+<details>
+<summary><b>🏦 金融分析师 — 从财报中提取实体关系</b></summary>
+<br>
+
+自动识别非结构化报告中的公司、高管、财务指标及其关系。
+
+```bash
+he parse earnings.md -t finance/earnings_graph -o ./finance_kb/
+he search ./finance_kb/ "关键风险因素有哪些？"
+```
+
+</details>
+
+<details>
+<summary><b>🔒 本地部署 — vLLM 数据不出境</b></summary>
+<br>
+
+通过 vLLM 本地运行 Qwen3.5-9B + bge-m3，数据绝不离开本机。
+
+```python
+from hyperextract import create_client
+llm, emb = create_client(
+    llm="vllm:Qwen3.5-9B@http://localhost:8000/v1",
+    embedder="vllm:bge-m3@http://localhost:8001/v1",
+    api_key="dummy",
+)
+```
+
+</details>
+
+## 🚀 支持的平台与模型
+
+Hyper-Extract 依赖大语言模型的结构化输出能力（`json_schema` 或 Function Calling）。
+
+| 平台 | 已验证模型 |
+|----------|-----------------|
+| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-5 |
+| **阿里云百炼** | qwen-plus, qwen-turbo, deepseek-r1 |
+| **本地 vLLM** | Qwen3.5-9B (GPTQ-Marlin) |
+
+**嵌入模型**（语义搜索）支持任意 OpenAI 兼容端点：`text-embedding-3-small`、`text-embedding-v4`（百炼）、`bge-m3`（本地 vLLM）。
+
+> 📖 完整指南：[Provider 系统与本地模型支持](https://yifanfeng97.github.io/Hyper-Extract/latest/zh/concepts/provider-system/)
+
+## ⚡ 30 秒快速上手
+
+```bash
+# 安装
+uv tool install hyperextract
+
+# 配置 API Key
+he config init -k YOUR_OPENAI_API_KEY
+
+# 从文档提取知识
+he parse examples/zh/sushi.md -t general/biography_graph -o ./output/ -l zh
+
+# 查询
+he search ./output/ "苏轼有哪些重要的作品？"
+
+# 可视化
+he show ./output/
+```
+
+<details>
+<summary><b>🐍 Python API</b>（点击展开）</summary>
+<br>
 
 ```bash
 uv pip install hyperextract
 ```
 
-### 2. CLI 命令行玩法
-
-仅仅几行命令体验最纯粹的知识交互。
-
-> 默认采用`gpt-4o-mini` 作为大模型基座， `text-embedding-3-small`作为文本嵌入模型。
-
-```bash
-# 配置 OpenAI API Key
-he config init -k YOUR_OPENAI_API_KEY
-
-# 提取知识
-he parse examples/zh/sushi.md -t general/biography_graph -o ./output/ -l zh
-
-# 查询知识摘要
-he search ./output/ "苏轼有哪些重要的作品？"
-
-# 可视化知识图谱
-he show ./output/
-
-# 增量补充知识
-he feed ./output/ examples/zh/sushi_question.md
-
-# 展示更新后的知识图谱
-he show ./output/
-```
-
-<details>
-<summary><b>🐍 Python API 深度集成</b>（点击展开）</summary>
-<br>
-
-### 安装
-
-```bash
-# 克隆仓库
-git clone https://github.com/yifanfeng97/hyper-extract.git
-cd hyper-extract
-
-# 安装依赖
-uv sync
-```
-
-### 配置
-
-```bash
-# 复制示例配置文件
-cp .env.example .env
-
-# 编辑 .env 文件，填入你的 API Key 和 Base URL
-# OPENAI_API_KEY=your-api-key
-# OPENAI_BASE_URL=https://api.openai.com/v1
-```
-
-### 使用
-
 ```python
-import os
-from dotenv import load_dotenv
-
-# 从 .env 文件加载环境变量
-load_dotenv()
-
 from hyperextract import Template
 
-# 创建模板
 ka = Template.create("general/biography_graph")
 
-# 解析文档
-with open("examples/zh/sushi.md", "r", encoding="utf-8") as f:
-    text = f.read()
-result = ka.parse(text)
+with open("examples/zh/sushi.md") as f:
+    result = ka.parse(f.read())
 
-# 可视化知识图谱
-ka.show(result)
-
-# 增量补充知识
-with open("examples/zh/sushi_question.md", "r", encoding="utf-8") as f:
-    new_text = f.read()
-ka.feed(result, new_text)
-
-# 展示更新后的知识图谱
-ka.show(result)
+result.show()
 ```
 
-> 🔗 完整示例代码，请参阅 [examples/zh](./examples/zh/)
+> 🔗 更多示例：[examples/zh](./examples/zh/)
 
 </details>
 
-<br>
+## 📈 为什么选择 Hyper-Extract？
 
-**安装方式对比：**
+| 特性 | GraphRAG | LightRAG | KG-Gen | ATOM | **Hyper-Extract** |
+| :------ | :------: | :------: | :----: | :--: | :---------------: |
+| 知识图谱 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 时序图谱 | ✅ | ❌ | ❌ | ✅ | ✅ |
+| 空间图谱 | ❌ | ❌ | ❌ | ❌ | ✅ |
+| 超图 | ❌ | ❌ | ❌ | ❌ | ✅ |
+| 领域模板 | ❌ | ❌ | ❌ | ❌ | ✅ |
+| 交互式 CLI | ✅ | ❌ | ❌ | ❌ | ✅ |
+| 多语言 | ✅ | ❌ | ❌ | ❌ | ✅ |
 
-| 使用场景 | 命令 | 说明 |
-|----------|------|------|
-| CLI 工具 | `uv tool install hyperextract` | 全局安装 `he` 命令 |
-| Python 库 | `uv pip install hyperextract` | 在 Python 代码中使用 |
+## 🧩 支持的知识结构
 
-## 🧩 8 种核心知识结构
-
-拒绝样板代码，纯干货聚焦数据本身。
+从简单到复杂 —— 为你的数据选择最合适的结构：
 
 <img src="docs/assets/autotypes.jpg" alt="知识结构矩阵" width="750" style="max-width: 100%;">
 
-### 示例：AutoGraph 知识图谱可视化
-
-以下是 `AutoGraph` 类型提取后的知识图谱可视化效果：
+**示例 — AutoGraph 可视化效果：**
 
 <img src="docs/assets/zh_show.jpg" alt="AutoGraph 可视化" width="750" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
 
-## 🛠️ 系统架构
+<details>
+<summary><b>📋 底层架构与模板（点击展开）</b></summary>
+<br>
 
 Hyper-Extract 采用**三层架构**：
 
-- **Auto-Types** 定义了知识提取的数据结构。8 种强类型结构（AutoModel、AutoList、AutoSet、AutoGraph、AutoHypergraph、AutoTemporalGraph、AutoSpatialGraph、AutoSpatioTemporalGraph）作为所有提取的输出格式。
-
-- **Methods** 基于 Auto-Types 提供提取算法。包括典型方法（KG-Gen、iText2KG、iText2KG*）和 RAG 增强方法（GraphRAG、LightRAG、Hyper-RAG、HypergraphRAG、Cog-RAG）。
-
-- **Templates** 提供领域特定的配置，包含开箱即用的 prompt 和数据结构。覆盖 6 大领域（金融、法律、医疗、中医、工业、通用），提供 80+ 预设模板，用户无需了解底层 Auto-Types 和 Methods 即可直接使用。
-
-可通过 **CLI**（`he parse`、`he search`、`he show`...）或 **Python API**（`Template.create()`）使用。
+- **Auto-Types** — 8 种强类型数据结构（模型、列表、集合、图谱、超图、时序图、空间图、时空图）
+- **Methods** — 提取算法：KG-Gen、GraphRAG、LightRAG、Hyper-RAG、Cog-RAG 等
+- **Templates** — 覆盖 6 大领域的 80+ 预设模板，零代码配置
 
 <img src="docs/assets/arch.jpg" alt="系统架构" width="750" style="max-width: 100%;">
 
-### 📝 相关文档
-
-- **预设模板**: 浏览覆盖 6 大领域的 [80+ 即用型模板](./hyperextract/templates/presets/)
-- **设计指南**: 学习如何[创建自定义模板](./hyperextract/templates/DESIGN_GUIDE_ZH.md)
-
-<details>
-<summary><b>📋 模板结构示例 (Graph 类型)</b></summary>
-
-以下是一个完整的 YAML 模板示例，用于 **Graph** 类型（实体关系）提取：
+**模板示例（Graph 类型）：**
 
 ```yaml
 language: zh
-
 name: 知识图谱
 type: graph
 tags: [general]
-
-description: '从文本中提取实体及其关系，构建知识图谱。'
-
+description: '从文本中提取实体及其关系。'
 output:
   entities:
     fields:
     - name: name
       type: str
-      description: '实体名称'
     - name: type
       type: str
-      description: '实体类型：如人物、组织、事件等'
     - name: description
       type: str
-      description: '实体的详细介绍'
   relations:
     fields:
     - name: source
       type: str
-      description: '源实体'
     - name: target
       type: str
-      description: '目标实体'
     - name: type
       type: str
-      description: '关系类型：如发明、合作、竞争等'
-    - name: description
-      type: str
-      description: '关系的详细介绍'
-
-guideline:
-  target: '从文本中提取实体及其关系。'
-  rules_for_entities:
-    - '提取有意义的实体'
-    - '保持命名一致'
-  rules_for_relations:
-    - '仅在文本明确表达时创建关系'
-
 identifiers:
   entity_id: name
   relation_id: '{source}|{type}|{target}'
-  relation_members:
-    source: source
-    target: target
-
-display:
-  entity_label: '{name} ({type})'
-  relation_label: '{type}'
 ```
+
+- [浏览全部 80+ 模板](./hyperextract/templates/presets/)
+- [创建自定义模板](./hyperextract/templates/DESIGN_GUIDE_ZH.md)
 
 </details>
 
-## 📈 与其他相关库的对比
+## 📚 文档与资源
 
-| 特性      | GraphRAG | LightRAG | KG-Gen | ATOM | **Hyper-Extract** |
-| ------- | :------: | :------: | :----: | :--: | :---------------: |
-| 知识图谱支持  |     ✅    |     ✅    |    ✅   |   ✅  |         ✅         |
-| 时序图谱    |     ✅    |     ❌    |    ❌   |   ✅  |         ✅         |
-| 空间图谱    |     ❌    |     ❌    |    ❌   |   ❌  |         ✅         |
-| 超图提取    |     ❌    |     ❌    |    ❌   |   ❌  |         ✅         |
-| 领域模板驱动  |     ❌    |     ❌    |    ❌   |   ❌  |         ✅         |
-| 交互式 CLI |     ✅    |     ❌    |    ❌   |   ❌  |         ✅         |
-| 多语言支持   |     ✅    |     ❌    |    ❌   |   ❌  |         ✅         |
-
-## 🤖 模型兼容性
-
-Hyper-Extract 依赖模型的结构化输出能力（`json_schema` 或 Function Calling）。
-
-**已验证兼容**：OpenAI GPT 系列、百炼 qwen-plus / qwen-turbo、本地 vLLM（Qwen3.5-9B GPTQ-Marlin）等。
-
-> 完整模型兼容性列表请参阅 [Provider 系统与本地模型支持](https://yifanfeng97.github.io/Hyper-Extract/latest/zh/concepts/provider-system/)。
-
-## 📚 相关文档
-
-- [完整文档](https://yifanfeng97.github.io/Hyper-Extract/latest/zh/) - 完整文档站点
-- [CLI 指南](https://yifanfeng97.github.io/Hyper-Extract/latest/zh/cli/) - 命令行界面
-- [模板画廊](./hyperextract/templates/presets/) - 可用模板
-- [示例代码](./examples/) - 可运行示例
+| 资源 | 链接 |
+| :------- | :--- |
+| 完整文档 | [yifanfeng97.github.io/Hyper-Extract](https://yifanfeng97.github.io/Hyper-Extract/latest/zh/) |
+| CLI 指南 | [命令行界面](https://yifanfeng97.github.io/Hyper-Extract/latest/zh/cli/) |
+| Provider 系统 | [模型兼容性与本地部署](https://yifanfeng97.github.io/Hyper-Extract/latest/zh/concepts/provider-system/) |
+| 模板画廊 | [80+ 预设模板](./hyperextract/templates/presets/) |
+| 示例代码 | [可运行示例](./examples/) |
 
 ## 🤝 参与贡献与协议
 
-热烈欢迎社区提交 Issues 和 PRs。
+热烈欢迎社区提交 [Issues](https://github.com/yifanfeng97/hyper-extract/issues) 和 [PRs](https://github.com/yifanfeng97/hyper-extract/pulls)。  
 项目基于 **Apache-2.0** 协议开源。
 
 ## ⭐ Star 历史趋势
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yifanfeng97/Hyper-Extract&type=Date)](https://star-history.com/#yifanfeng97/Hyper-Extract&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=yifanfeng97/hyper-Extract&type=Date)](https://star-history.com/#yifanfeng97/hyper-Extract&Date)

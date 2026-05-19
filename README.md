@@ -39,251 +39,198 @@ Hyper-Extract is an intelligent, LLM-powered knowledge extraction and evolution 
 
 ## ✨ Core Features
 
-- 🔷 **8 Auto-Types:** From basic `AutoModel`/`AutoList` to advanced `AutoGraph`, `AutoHypergraph`, and `AutoSpatioTemporalGraph`.
-- 🧠 **10+ Extraction Engines:** Out-of-the-box support for cutting-edge retrieval paradigms like `GraphRAG`, `LightRAG`, `Hyper-RAG`, and `KG-Gen`.
-- 📝 **Declarative YAML Templates:** Zero-code extraction definition. Includes 80+ presets across 6 domains.
-- 🔄 **Incremental Evolution:** Feed new documents on the fly to continuously map out and expand the extracted knowledge.
+| | |
+|:---|:---|
+| 🔷 **8 Knowledge Structures** | From simple Lists to advanced Graphs, Hypergraphs, and Spatio-Temporal Graphs |
+| 🧠 **10+ Extraction Engines** | GraphRAG, LightRAG, Hyper-RAG, KG-Gen, and more — ready to use |
+| 📝 **80+ YAML Templates** | Zero-code extraction across Finance, Legal, Medical, TCM, Industry, and General domains |
+| 🔄 **Incremental Evolution** | Feed new documents anytime to expand and refine your knowledge base |
 
-***
+## 🎯 What Can You Do With It?
 
-## ⚡ Quick Start
+<details>
+<summary><b>📄 Researcher — Turn papers into knowledge graphs</b></summary>
+<br>
 
-### 1. Installation
-
-**For CLI Users** (install `he` command globally):
+Feed a 20-page academic paper, get an interactive graph of key concepts, authors, and citations.
 
 ```bash
-uv tool install hyperextract
+he parse paper.pdf -t general/academic_graph -o ./paper_kb/
+he show ./paper_kb/
 ```
 
-**For Python Developers** (use as library):
+</details>
+
+<details>
+<summary><b>🏦 Financial Analyst — Extract entities from earnings reports</b></summary>
+<br>
+
+Automatically identify companies, executives, financial metrics, and their relationships from unstructured reports.
+
+```bash
+he parse earnings.md -t finance/earnings_graph -o ./finance_kb/
+he search ./finance_kb/ "What are the key risk factors?"
+```
+
+</details>
+
+<details>
+<summary><b>🔒 Local Deployment — Keep data on-premise with vLLM</b></summary>
+<br>
+
+Run Qwen3.5-9B + bge-m3 locally via vLLM. No data leaves your machine.
+
+```python
+from hyperextract import create_client
+llm, emb = create_client(
+    llm="vllm:Qwen3.5-9B@http://localhost:8000/v1",
+    embedder="vllm:bge-m3@http://localhost:8001/v1",
+    api_key="dummy",
+)
+```
+
+</details>
+
+## 🚀 Supported Platforms & Models
+
+Hyper-Extract relies on the LLM's structured output capability (`json_schema` or Function Calling).
+
+| Platform | Verified Models |
+|----------|-----------------|
+| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-5 |
+| **阿里云百炼** | qwen-plus, qwen-turbo, deepseek-r1 |
+| **Local vLLM** | Qwen3.5-9B (GPTQ-Marlin) |
+
+**Embedding models** (semantic search) work with any OpenAI-compatible endpoint: `text-embedding-3-small`, `text-embedding-v4` (Bailian), `bge-m3` (local vLLM).
+
+> 📖 Full guide: [Provider System & Local Model Support](https://yifanfeng97.github.io/Hyper-Extract/latest/concepts/provider-system/)
+
+## ⚡ 30-Second Quick Start
+
+```bash
+# Install
+uv tool install hyperextract
+
+# Configure API key
+he config init -k YOUR_OPENAI_API_KEY
+
+# Extract knowledge from a document
+he parse examples/en/tesla.md -t general/biography_graph -o ./output/ -l en
+
+# Query it
+he search ./output/ "What are Tesla's major achievements?"
+
+# Visualize
+he show ./output/
+```
+
+<details>
+<summary><b>🐍 Python API</b> (click to expand)</summary>
+<br>
 
 ```bash
 uv pip install hyperextract
 ```
 
-### 2. The Command Line Way
-
-Extract, search, and manage directly from CLI.
-
-> By default, the CLI uses `gpt-4o-mini` and `text-embedding-3-small`.
-
-```bash
-# Configure OpenAI API Key
-he config init -k YOUR_OPENAI_API_KEY
-
-# Extract knowledge
-he parse examples/en/tesla.md -t general/biography_graph -o ./output/ -l en
-
-# Query the knowledge abstract
-he search ./output/ "What are Tesla's major achievements?"
-
-# Visualize the knowledge graph
-he show ./output/
-
-# Incrementally supplement knowledge
-he feed ./output/ examples/en/tesla_question.md
-
-# Show the updated knowledge graph
-he show ./output/
-```
-
-<details>
-<summary><b>🐍 The Python API Way</b> (click to expand)</summary>
-<br>
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yifanfeng97/hyper-extract.git
-cd hyper-extract
-
-# Install dependencies
-uv sync
-```
-
-### Configuration
-
-```bash
-# Copy the example env file
-cp .env.example .env
-
-# Edit .env with your API key and base URL
-# OPENAI_API_KEY=your-api-key
-# OPENAI_BASE_URL=https://api.openai.com/v1
-```
-
-### Usage
-
 ```python
-import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
 from hyperextract import Template
 
-# Create a template
 ka = Template.create("general/biography_graph")
 
-# Parse a document
-with open("examples/en/tesla.md", "r", encoding="utf-8") as f:
-    text = f.read()
-result = ka.parse(text)
+with open("examples/en/tesla.md") as f:
+    result = ka.parse(f.read())
 
-# Visualize the knowledge graph
-ka.show(result)
-
-# Incrementally supplement knowledge
-with open("examples/en/tesla_question.md", "r", encoding="utf-8") as f:
-    new_text = f.read()
-ka.feed(result, new_text)
-
-# Show the updated knowledge graph
-ka.show(result)
+result.show()
 ```
 
-> 🔗 For complete examples, see [examples/en](./examples/en/)
+> 🔗 More examples: [examples/en](./examples/en/)
 
 </details>
 
-<br>
+## 📈 Why Hyper-Extract?
 
-**Installation Comparison:**
+| Feature | GraphRAG | LightRAG | KG-Gen | ATOM | **Hyper-Extract** |
+| :------ | :------: | :------: | :----: | :--: | :---------------: |
+| Knowledge Graph | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Temporal Graph | ✅ | ❌ | ❌ | ✅ | ✅ |
+| Spatial Graph | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Hypergraph | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Domain Templates | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Interactive CLI | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Multi-language | ✅ | ❌ | ❌ | ❌ | ✅ |
 
-| Use Case | Command | Purpose |
-|----------|---------|---------|
-| CLI Tool | `uv tool install hyperextract` | Install `he` command globally |
-| Python Library | `uv pip install hyperextract` | Use in Python code |
+## 🧩 Supported Knowledge Structures
 
-## 🧩 Deep Dive: The 8 Auto-Types
-
-Our framework embraces complexity without making you write boilerplate code.
+From simple to complex — pick the right structure for your data:
 
 <img src="docs/assets/autotypes.jpg" alt="Knowledge Structures Matrix" width="750" style="max-width: 100%;">
 
-### Example: AutoGraph Visualization
-
-Here is the knowledge graph visualization after `AutoGraph` extraction:
+**Example — AutoGraph visualization:**
 
 <img src="docs/assets/en_show.jpg" alt="AutoGraph Visualization" width="750" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
 
-## 🛠️ Architecture Overview
+<details>
+<summary><b>📋 What's under the hood? (Architecture & Templates)</b></summary>
+<br>
 
 Hyper-Extract follows a **three-layer architecture**:
 
-- **Auto-Types** define the data structures for knowledge extraction. With 8 strong-typed structures (AutoModel, AutoList, AutoSet, AutoGraph, AutoHypergraph, AutoTemporalGraph, AutoSpatialGraph, AutoSpatioTemporalGraph), they serve as the output format for all extractions.
-
-- **Methods** provide extraction algorithms built on Auto-Types. This includes Typical methods (KG-Gen, iText2KG, iText2KG*) and RAG-based methods (GraphRAG, LightRAG, Hyper-RAG, HypergraphRAG, Cog-RAG).
-
-- **Templates** offer domain-specific configurations with ready-to-use prompts and data structures. Covering 6 domains (Finance, Legal, Medical, TCM, Industry, General) with 80+ preset templates, users can extract knowledge without dealing with Auto-Types or Methods directly.
-
-Use via **CLI** (`he parse`, `he search`, `he show`...) or **Python API** (`Template.create()`).
+- **Auto-Types** — 8 strongly-typed data structures (Model, List, Set, Graph, Hypergraph, Temporal Graph, Spatial Graph, Spatio-Temporal Graph)
+- **Methods** — Extraction algorithms: KG-Gen, GraphRAG, LightRAG, Hyper-RAG, Cog-RAG, and more
+- **Templates** — 80+ presets across 6 domains. Zero-code setup.
 
 <img src="docs/assets/arch.jpg" alt="Architecture" width="750" style="max-width: 100%;">
 
-### 📚 Related Documentation
-
-- **Preset Templates**: Browse [80+ ready-to-use templates](./hyperextract/templates/presets/) across 6 domains
-- **Design Guide**: Learn how to [create custom templates](./hyperextract/templates/DESIGN_GUIDE.md)
-
-<details>
-<summary><b>📋 Template Structure Example (Graph Type)</b></summary>
-
-Here's a complete YAML template example for **Graph** type extraction (entity-relationship extraction):
+**Template example (Graph type):**
 
 ```yaml
 language: en
-
 name: Knowledge Graph
 type: graph
 tags: [general]
-
-description: 'Extract entities and their relationships to construct a knowledge graph.'
-
+description: 'Extract entities and their relationships.'
 output:
   entities:
     fields:
     - name: name
       type: str
-      description: 'Entity name'
     - name: type
       type: str
-      description: 'Entity type: e.g., person, organization, event'
     - name: description
       type: str
-      description: 'Entity description'
   relations:
     fields:
     - name: source
       type: str
-      description: 'Source entity'
     - name: target
       type: str
-      description: 'Target entity'
     - name: type
       type: str
-      description: 'Relation type: e.g., invention, collaboration, competition'
-    - name: description
-      type: str
-      description: 'Relation description'
-
-guideline:
-  target: 'Extract entities and their relationships from the text.'
-  rules_for_entities:
-    - 'Extract meaningful entities'
-    - 'Maintain consistent naming'
-  rules_for_relations:
-    - 'Create relations only when explicitly expressed in the text'
-
 identifiers:
   entity_id: name
   relation_id: '{source}|{type}|{target}'
-  relation_members:
-    source: source
-    target: target
-
-display:
-  entity_label: '{name} ({type})'
-  relation_label: '{type}'
 ```
+
+- [Browse all 80+ templates](./hyperextract/templates/presets/)
+- [Create custom templates](./hyperextract/templates/DESIGN_GUIDE.md)
 
 </details>
 
-## 📈 Comparison with Other Libraries
+## 📚 Documentation & Resources
 
-| Feature          | GraphRAG | LightRAG | KG-Gen | ATOM | **Hyper-Extract** |
-| ---------------- | :------: | :------: | :----: | :--: | :---------------: |
-| Knowledge Graph  |     ✅    |     ✅    |    ✅   |   ✅  |         ✅         |
-| Temporal Graph   |     ✅    |     ❌    |    ❌   |   ✅  |         ✅         |
-| Spatial Graph    |     ❌    |     ❌    |    ❌   |   ❌  |         ✅         |
-| Hypergraph       |     ❌    |     ❌    |    ❌   |   ❌  |         ✅         |
-| Domain Templates |     ❌    |     ❌    |    ❌   |   ❌  |         ✅         |
-| CLI Tool         |     ✅    |     ❌    |    ❌   |   ❌  |         ✅         |
-| Multi-language   |     ✅    |     ❌    |    ❌   |   ❌  |         ✅         |
-
-## 🤖 Model Compatibility
-
-Hyper-Extract relies on the model's structured output capability (`json_schema` or Function Calling).
-
-**Verified compatible**: OpenAI GPT series, Bailian qwen-plus / qwen-turbo, local vLLM (Qwen3.5-9B GPTQ-Marlin), and more.
-
-> For the full model compatibility list, see [Provider System & Local Model Support](https://yifanfeng97.github.io/Hyper-Extract/latest/concepts/provider-system/).
-
-## 📚 Related Documentation
-
-- [Documentation](https://yifanfeng97.github.io/Hyper-Extract/latest/) - Complete documentation site
-- [CLI Guide](https://yifanfeng97.github.io/Hyper-Extract/latest/cli/) - Command-line interface
-- [Template Gallery](./hyperextract/templates/presets/) - Available templates
-- [Example Code](./examples/) - Working examples
+| Resource | Link |
+| :------- | :--- |
+| Full Documentation | [yifanfeng97.github.io/Hyper-Extract](https://yifanfeng97.github.io/Hyper-Extract/latest/) |
+| CLI Guide | [Command-line interface](https://yifanfeng97.github.io/Hyper-Extract/latest/cli/) |
+| Provider System | [Model compatibility & local deployment](https://yifanfeng97.github.io/Hyper-Extract/latest/concepts/provider-system/) |
+| Template Gallery | [80+ presets](./hyperextract/templates/presets/) |
+| Examples | [Working code](./examples/) |
 
 ## 🤝 Contributing & License
 
-Contributions are welcome! Please submit Issues and PRs.
+Contributions are welcome! Please submit [Issues](https://github.com/yifanfeng97/hyper-extract/issues) and [PRs](https://github.com/yifanfeng97/hyper-extract/pulls).  
 Licensed under **Apache-2.0**.
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yifanfeng97/Hyper-Extract&type=Date)](https://star-history.com/#yifanfeng97/Hyper-Extract&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=yifanfeng97/hyper-Extract&type=Date)](https://star-history.com/#yifanfeng97/hyper-Extract&Date)

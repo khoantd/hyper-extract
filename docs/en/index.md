@@ -39,7 +39,7 @@
         result = ka.parse(f.read())
 
     # 3. Visualize
-    ka.show(result)
+    result.show()
     ```
 
 **→ Ready to dive deeper?** Check out the [Getting Started Guide](getting-started/index.md) or jump to [CLI](cli/index.md) / [Python SDK](python/index.md) documentation.

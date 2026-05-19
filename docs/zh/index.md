@@ -39,7 +39,7 @@
         result = ka.parse(f.read())
 
     # 3. 可视化
-    ka.show(result)
+    result.show()
     ```
 
 **→ 想要深入了解？** 查看[入门指南](getting-started/index.md)或直接跳转至 [CLI](cli/index.md) / [Python SDK](python/index.md) 文档。
