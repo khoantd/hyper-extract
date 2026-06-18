@@ -81,6 +81,7 @@ plugins:
                     - cli/commands/list.md
                     - cli/commands/config.md
                 - cli/configuration.md
+            - MCP Server: mcp.md
             - Python SDK:
                 - python/index.md
                 - python/quickstart.md
@@ -171,6 +172,7 @@ plugins:
                     - zh/cli/commands/list.md
                     - zh/cli/commands/config.md
                 - zh/cli/configuration.md
+            - MCP 服务器: zh/mcp.md
             - Python SDK:
                 - zh/python/index.md
                 - zh/python/quickstart.md

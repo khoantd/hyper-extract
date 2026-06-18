@@ -226,6 +226,17 @@ identifiers:
 | Template Gallery | [80+ presets](./hyperextract/templates/presets/) |
 | Examples | [Working code](./examples/) |
 
+## 🔌 MCP Server
+
+Expose your knowledge abstracts to MCP-capable assistants (Claude Desktop, IDE agents) via the [Model Context Protocol](https://modelcontextprotocol.io) — read + export only.
+
+```bash
+pip install 'hyperextract[mcp]'
+he-mcp        # stdio MCP server
+```
+
+Tools: `list_templates`, `info`, `search`, `ask` (RAG), `export_obsidian`. Full guide: [MCP Server docs](https://yifanfeng97.github.io/Hyper-Extract/latest/mcp/).
+
 ## 🤝 Contributing & License
 
 Contributions are welcome! Please submit [Issues](https://github.com/yifanfeng97/hyper-extract/issues) and [PRs](https://github.com/yifanfeng97/hyper-extract/pulls).  

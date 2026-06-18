@@ -226,6 +226,17 @@ identifiers:
 | 模板画廊 | [80+ 预设模板](./hyperextract/templates/presets/) |
 | 示例代码 | [可运行示例](./examples/) |
 
+## 🔌 MCP 服务器
+
+通过 [Model Context Protocol](https://modelcontextprotocol.io) 将知识摘要暴露给支持 MCP 的助手（Claude Desktop、IDE 智能体）——只读 + 导出。
+
+```bash
+pip install 'hyperextract[mcp]'
+he-mcp        # stdio MCP 服务器
+```
+
+工具：`list_templates`、`info`、`search`、`ask`（RAG）、`export_obsidian`。完整指南：[MCP 服务器文档](https://yifanfeng97.github.io/Hyper-Extract/latest/zh/mcp/)。
+
 ## 🤝 参与贡献与协议
 
 热烈欢迎社区提交 [Issues](https://github.com/yifanfeng97/hyper-extract/issues) 和 [PRs](https://github.com/yifanfeng97/hyper-extract/pulls)。  
