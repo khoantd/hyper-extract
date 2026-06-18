@@ -306,6 +306,47 @@ class TestCompatibleEmbeddings:
         )
         assert emb._max_batch_size == 5
 
+    def test_multichunk_uses_true_mean(self, mock_openai_client):
+        """A text split into 3+ chunks is reduced to the true mean embedding.
+
+        The old pairwise (prev + curr) / 2 produced [6.75, ...] for chunk
+        vectors 3/6/9; the correct mean is (3 + 6 + 9) / 3 = 6.
+        """
+        emb = CompatibleEmbeddings(
+            model="test-model",
+            api_key="sk-test",
+            base_url="http://test/v1",
+        )
+        mock_openai_client.embeddings.create.return_value = MagicMock(
+            data=[
+                MagicMock(embedding=[3.0, 3.0, 3.0]),
+                MagicMock(embedding=[6.0, 6.0, 6.0]),
+                MagicMock(embedding=[9.0, 9.0, 9.0]),
+            ]
+        )
+        # Force the single input text to split into three chunks.
+        with patch.object(
+            emb, "_split_texts", return_value=[("c1", 0), ("c2", 0), ("c3", 0)]
+        ), patch.object(emb, "_client", mock_openai_client):
+            result = emb.embed_documents(["a long text"])
+
+        assert result == [[6.0, 6.0, 6.0]]
+
+    def test_single_chunk_embedding_unchanged(self, mock_openai_client):
+        """A single-chunk text returns its embedding unchanged (regression guard)."""
+        emb = CompatibleEmbeddings(
+            model="test-model",
+            api_key="sk-test",
+            base_url="http://test/v1",
+        )
+        mock_openai_client.embeddings.create.return_value = MagicMock(
+            data=[MagicMock(embedding=[0.1, 0.2, 0.3])]
+        )
+        with patch.object(emb, "_client", mock_openai_client):
+            result = emb.embed_documents(["hi"])
+
+        assert result == [[0.1, 0.2, 0.3]]
+
 
 # =============================================================================
 # get_client (config file)
