@@ -25,6 +25,7 @@ from ontomem.merger import MergeStrategy, create_merger, BaseMerger
 from ontosight import view_graph
 
 from .base import BaseAutoType
+from hyperextract.utils.graph_topology import NodeRanking, rank_graph_nodes
 from hyperextract.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -934,6 +935,57 @@ class AutoGraph(
 
         return response
 
+    # ==================== Topology Analysis ====================
+
+    def analyze_topology(
+        self,
+        *,
+        top_k: int = 10,
+        metric: str = "composite",
+    ) -> List[NodeRanking]:
+        """Rank nodes by connectivity and structural importance.
+
+        Args:
+            top_k: Maximum rankings to return (0 = all nodes).
+            metric: ``degree``, ``betweenness``, or ``composite`` (default).
+        """
+        return rank_graph_nodes(
+            self.nodes,
+            self.edges,
+            node_id_extractor=self.node_key_extractor,
+            node_ids_in_edge_extractor=self.nodes_in_edge_extractor,
+            node_label_extractor=self._node_label_extractor,
+            top_k=top_k,
+            metric=metric,
+        )
+
+    def critical_nodes(self, *, top_k: int = 10) -> List[NodeRanking]:
+        """Return top nodes by composite structural importance."""
+        return self.analyze_topology(top_k=top_k, metric="composite")
+
+    def _topology_view_context(
+        self,
+        *,
+        top_k: int = 10,
+        highlight_critical: bool = True,
+    ) -> dict:
+        """Build OntoSight context payload for critical-node visualization."""
+        all_rankings = self.analyze_topology(top_k=0, metric="composite")
+        display_rankings = all_rankings[:top_k] if top_k > 0 else all_rankings
+        critical_ids = [
+            r.node_id
+            for r in all_rankings
+            if r.tier in ("critical", "high")
+        ]
+        if not highlight_critical:
+            critical_ids = []
+        return {
+            "node_rankings": [r.model_dump() for r in display_rankings],
+            "critical_node_ids": critical_ids,
+            "topology_metric": "composite",
+            "topology_total_nodes": len(self.nodes),
+        }
+
     # ==================== Serialization ====================
 
     def dump_index(self, folder_path: str | Path) -> None:
@@ -986,6 +1038,9 @@ class AutoGraph(
         top_k_edges_for_search: int = 3,
         top_k_nodes_for_chat: int = 3,
         top_k_edges_for_chat: int = 3,
+        highlight_critical: bool = True,
+        top_k_critical: int = 10,
+        print_topology_summary: bool = True,
     ) -> None:
         """Visualize the graph using OntoSight.
 
@@ -998,6 +1053,9 @@ class AutoGraph(
             top_k_edges_for_search: Number of edges to retrieve for search callback (default: 3).
             top_k_nodes_for_chat: Number of nodes to retrieve for chat callback (default: 3).
             top_k_edges_for_chat: Number of edges to retrieve for chat callback (default: 3).
+            highlight_critical: Highlight critical/high-importance nodes in OntoSight (default: True).
+            top_k_critical: Number of ranked nodes to include in the viewer panel (default: 10).
+            print_topology_summary: Print a critical-nodes table to the terminal before opening (default: True).
         """
         if node_label_extractor is None:
             node_label_extractor = self._node_label_extractor
@@ -1033,6 +1091,19 @@ class AutoGraph(
             search_callback = None
             chat_callback = None
 
+        topology_context = self._topology_view_context(
+            top_k=top_k_critical,
+            highlight_critical=highlight_critical,
+        )
+        if print_topology_summary and topology_context.get("node_rankings"):
+            from hyperextract.cli.topology_display import print_topology_table
+
+            print_topology_table(
+                topology_context["node_rankings"],
+                total_nodes=topology_context.get("topology_total_nodes", len(self.nodes)),
+                metric=topology_context.get("topology_metric", "composite"),
+            )
+
         view_graph(
             node_list=self.nodes,
             edge_list=self.edges,
@@ -1044,6 +1115,7 @@ class AutoGraph(
             edge_label_extractor=edge_label_extractor,
             on_search=search_callback,
             on_chat=chat_callback,
+            context=topology_context,
         )
 
     # ==================== Obsidian Export ====================

@@ -1,0 +1,129 @@
+"""Graph visualization - creates interactive force-directed graphs."""
+
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Type, Tuple
+from pydantic import BaseModel
+import logging
+
+from ontosight.server.state import global_state
+from ontosight.core.storage import GraphStorage
+from ontosight.utils import (
+    ensure_server_running,
+    open_browser,
+    wait_for_user,
+)
+
+logger = logging.getLogger(__name__)
+
+NodeSchema = TypeVar("NodeSchema", bound=BaseModel)
+EdgeSchema = TypeVar("EdgeSchema", bound=BaseModel)
+
+
+def _store_topology_context(context: Optional[Dict[str, Any]]) -> None:
+    """Persist topology rankings from Hyper-Extract (or other callers)."""
+    if not context:
+        return
+    rankings = context.get("node_rankings")
+    if rankings:
+        global_state.set_visualization_data("node_rankings", rankings)
+    if "critical_node_ids" in context:
+        global_state.set_visualization_data(
+            "critical_node_ids", context.get("critical_node_ids", [])
+        )
+    if "topology_metric" in context:
+        global_state.set_visualization_data(
+            "topology_metric", context.get("topology_metric", "composite")
+        )
+    if "topology_total_nodes" in context:
+        global_state.set_visualization_data(
+            "topology_total_nodes", context.get("topology_total_nodes")
+        )
+
+
+def view_graph(
+    node_list: List[NodeSchema],
+    edge_list: List[EdgeSchema],
+    node_schema: Type[NodeSchema],
+    edge_schema: Type[EdgeSchema],
+    node_id_extractor: Callable[[NodeSchema], str],
+    node_ids_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, str]],
+    edge_label_extractor: Callable[[EdgeSchema], str],
+    node_label_extractor: Optional[Callable[[NodeSchema], str]] = None,
+    on_search: Optional[Callable[[str, Dict], Any]] = None,
+    on_chat: Optional[Callable[[str, Dict], Any]] = None,
+    context: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Create an interactive graph visualization.
+
+    A graph visualization connects nodes using edges (typically pairwise connections).
+    Each node and edge can have properties that are extracted using the provided extractors.
+
+    Args:
+        node_list: List of node objects/dicts
+        edge_list: List of edge objects/dicts connecting nodes
+        node_schema: Schema describing node structure (for detail view)
+        edge_schema: Schema describing edge structure (for detail view)
+        node_id_extractor: Function to extract unique ID from a node object (required)
+        node_ids_in_edge_extractor: Function returning (source_id, target_id) from an edge object (required)
+        edge_label_extractor: Function to extract display label from an edge object (required)
+        node_label_extractor: Optional function to extract display label from a node object
+        on_search: Optional callback for search queries
+        on_chat: Optional callback for chat queries
+        context: Optional context data to store with visualization
+    """
+    ensure_server_running()
+    global_state.clear()
+
+    # Extract callbacks and context
+    callbacks = {}
+    if on_search is not None:
+        callbacks["search"] = on_search
+    if on_chat is not None:
+        callbacks["chat"] = on_chat
+
+    if callbacks:
+        global_state.register_callbacks(callbacks)
+
+    if context:
+        global_state.set_context(**context)
+        _store_topology_context(context)
+
+    # Store schema for detail view (if provided)
+    if node_schema is not None:
+        global_state.set_context(node_schema=node_schema)
+    if edge_schema is not None:
+        global_state.set_context(edge_schema=edge_schema)
+
+    # Normalize data and create storage
+    try:
+        # Create storage directly from raw schema items
+        storage = GraphStorage(
+            node_list=node_list,
+            edge_list=edge_list,
+            node_id_extractor=node_id_extractor,
+            node_ids_in_edge_extractor=node_ids_in_edge_extractor,
+            edge_label_extractor=edge_label_extractor,
+            node_label_extractor=node_label_extractor,
+            node_rankings=(context or {}).get("node_rankings"),
+            critical_node_ids=(context or {}).get("critical_node_ids"),
+        )
+        global_state.set_storage(storage)
+
+        # Get formatted data from storage for metadata
+        stats = storage.get_stats()
+        meta_data = {
+            "Nodes": stats["total_nodes"],
+            "Edges": stats["total_edges"],
+            "Average Node Degree": stats["avg_degree"],
+            "Average Edge Degree": 2,
+        }
+
+        global_state.set_visualization_type("graph")
+        global_state.set_visualization_data("meta_data", meta_data)
+        logger.info("Graph visualization setup complete")
+
+        open_browser()
+        wait_for_user()
+
+    except Exception as e:
+        logger.error(f"Failed to setup graph visualization: {e}")
+        raise

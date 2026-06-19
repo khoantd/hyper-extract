@@ -9,12 +9,14 @@ import pytest
 
 from hyperextract.utils.client import (
     _parse_client_spec,
+    _env_api_key,
     create_llm,
     create_embedder,
     create_client,
     CompatibleEmbeddings,
     get_client,
     PROVIDER_PRESETS,
+    REMOTE_PROXY_PROVIDERS,
 )
 
 
@@ -81,6 +83,24 @@ class TestParseClientSpec:
         assert result["model"] == ""
         assert result["base_url"] == ""
 
+    def test_litellm_full_spec(self):
+        """LiteLLM provider:model@url format — full manual specification."""
+        result = _parse_client_spec(
+            "litellm:gpt-4o-mini@https://litellm.example.com/v1",
+            api_key="sk-master",
+        )
+        assert result["provider"] == "litellm"
+        assert result["model"] == "gpt-4o-mini"
+        assert result["base_url"] == "https://litellm.example.com/v1"
+        assert result["api_key"] == "sk-master"
+
+    def test_litellm_no_defaults(self):
+        """LiteLLM provider has None defaults — no URL or model auto-filled."""
+        result = _parse_client_spec("litellm", api_key="sk-master")
+        assert result["provider"] == "litellm"
+        assert result["model"] == ""
+        assert result["base_url"] == ""
+
 
 # =============================================================================
 # create_llm / create_embedder
@@ -138,6 +158,15 @@ class TestCreateEmbedder:
         )
         assert isinstance(emb, CompatibleEmbeddings)
         assert emb._model == "bge-m3"
+
+    def test_create_embedder_litellm(self):
+        """LiteLLM embedder uses CompatibleEmbeddings for custom proxy URL."""
+        emb = create_embedder(
+            "litellm:text-embedding-3-small@https://litellm.example.com/v1",
+            api_key="sk-master",
+        )
+        assert isinstance(emb, CompatibleEmbeddings)
+        assert emb._model == "text-embedding-3-small"
 
 
 # =============================================================================
@@ -414,6 +443,18 @@ class TestProviderPresets:
         assert preset["base_url"] is None
         assert preset["default_llm"] is None
         assert preset["default_embedder"] is None
+
+    def test_litellm_no_defaults(self):
+        """LiteLLM preset has None defaults (must be specified explicitly)."""
+        preset = PROVIDER_PRESETS["litellm"]
+        assert preset["base_url"] is None
+        assert preset["default_llm"] is None
+        assert preset["default_embedder"] is None
+
+    def test_remote_proxy_providers(self):
+        """Remote proxy providers include vllm and litellm."""
+        assert "vllm" in REMOTE_PROXY_PROVIDERS
+        assert "litellm" in REMOTE_PROXY_PROVIDERS
 
     def test_no_deepseek_provider(self):
         """DeepSeek should not have its own preset (accessed via Bailian)."""

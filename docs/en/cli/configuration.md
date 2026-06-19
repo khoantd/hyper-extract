@@ -1,6 +1,6 @@
 # CLI Configuration Reference
 
-Configuration guide for Hyper-Extract CLI, supporting **OpenAI**, **Alibaba Cloud Bailian**, and **Local vLLM** deployments.
+Configuration guide for Hyper-Extract CLI, supporting **OpenAI**, **Alibaba Cloud Bailian**, **Local vLLM**, and **Remote LiteLLM proxy** deployments.
 
 ---
 
@@ -44,6 +44,26 @@ Choose your deployment method and follow the steps.
       -u http://localhost:8001/v1 \
       -k dummy \
       -m BAAI/bge-m3
+    ```
+
+=== "Remote LiteLLM Proxy"
+
+    Configure a single proxy URL for both LLM and embedder:
+
+    ```bash
+    he config init
+    # Select "LiteLLM Proxy" and enter proxy URL + master key + model names
+
+    # Or configure directly:
+    he config llm -p litellm \
+      -u https://litellm.example.com/v1 \
+      -k YOUR_MASTER_KEY \
+      -m gpt-4o-mini
+
+    he config embedder -p litellm \
+      -u https://litellm.example.com/v1 \
+      -k YOUR_MASTER_KEY \
+      -m text-embedding-3-small
     ```
 
 ---
@@ -154,6 +174,20 @@ he config embedder --unset
       -m BAAI/bge-m3
     ```
 
+=== "Remote LiteLLM Proxy"
+
+    ```bash
+    he config llm -p litellm \
+      -u https://litellm.example.com/v1 \
+      -k YOUR_MASTER_KEY \
+      -m gpt-4o-mini
+
+    he config embedder -p litellm \
+      -u https://litellm.example.com/v1 \
+      -k YOUR_MASTER_KEY \
+      -m text-embedding-3-small
+    ```
+
 === "Mixed Deployment"
 
     LLM and Embedder can use different providers:
@@ -219,6 +253,22 @@ Running `he config init` automatically creates `~/.he/config.toml`.
     base_url = "http://localhost:8001/v1"
     ```
 
+=== "Remote LiteLLM Proxy"
+
+    ```toml
+    [llm]
+    provider = "litellm"
+    model = "gpt-4o-mini"
+    api_key = "sk-your-master-key"
+    base_url = "https://litellm.example.com/v1"
+
+    [embedder]
+    provider = "litellm"
+    model = "text-embedding-3-small"
+    api_key = "sk-your-master-key"
+    base_url = "https://litellm.example.com/v1"
+    ```
+
 === "Mixed Deployment"
 
     ```toml
@@ -260,6 +310,9 @@ The following environment variables can be used as configuration fallback:
 |----------|---------|---------|
 | `OPENAI_API_KEY` | `llm.api_key`, `embedder.api_key` | `sk-...` |
 | `OPENAI_BASE_URL` | `llm.base_url` | `https://api.openai.com/v1` |
+| `LITELLM_BASE_URL` | `llm.base_url`, `embedder.base_url` (when provider is `litellm`) | `https://litellm.example.com/v1` |
+| `LITELLM_API_KEY` | `llm.api_key`, `embedder.api_key` (when provider is `litellm`) | `sk-...` |
+| `LITELLM_MASTER_KEY` | Alias for `LITELLM_API_KEY` | `sk-...` |
 
 **Priority Note:** Environment variables take precedence over config file, but are overridden by command-line flags.
 
@@ -311,6 +364,24 @@ The following environment variables can be used as configuration fallback:
     **"CUDA out of memory"**
 
     Lower `--gpu-memory-utilization` or use a smaller model / quantized version.
+
+=== "LiteLLM Proxy Issues"
+
+    **"LiteLLM provider requires base_url"**
+
+    Set the proxy URL explicitly:
+
+    ```bash
+    he config llm -p litellm -u https://your-proxy/v1 -k YOUR_MASTER_KEY
+    ```
+
+    **"401 Unauthorized"**
+
+    Verify your LiteLLM master key matches the proxy configuration (`LITELLM_API_KEY` or `LITELLM_MASTER_KEY`).
+
+    **"The model does not exist"**
+
+    Use model names exactly as configured on your LiteLLM proxy (`he config llm --show` to verify).
 
 ---
 

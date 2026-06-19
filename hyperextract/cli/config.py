@@ -29,6 +29,11 @@ PROVIDER_PRESETS: Dict[str, Dict[str, str | None]] = {
         "default_llm": None,
         "default_embedder": None,
     },
+    "litellm": {
+        "base_url": None,
+        "default_llm": None,
+        "default_embedder": None,
+    },
     # Anthropic (Claude): native client, no base_url, no embeddings API.
     "anthropic": {
         "base_url": "",
@@ -42,11 +47,24 @@ PROVIDER_PRESETS: Dict[str, Dict[str, str | None]] = {
     },
 }
 
+# OpenAI-compatible providers that require an explicit base_url (local or remote proxy).
+REMOTE_PROXY_PROVIDERS = ("vllm", "litellm")
+
 # Environment variables checked (in order) for each provider's API key.
 PROVIDER_API_KEY_ENV: Dict[str, tuple] = {
     "anthropic": ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"),
     "claude": ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"),
+    "litellm": ("LITELLM_API_KEY", "LITELLM_MASTER_KEY", "OPENAI_API_KEY"),
 }
+
+
+def _env_base_url(provider: str) -> str:
+    """Return base URL from environment for the given provider."""
+    if provider == "litellm":
+        return os.environ.get("LITELLM_BASE_URL", "") or os.environ.get(
+            "OPENAI_BASE_URL", ""
+        )
+    return os.environ.get("OPENAI_BASE_URL", "")
 
 
 def _env_api_key(provider: str) -> str:
@@ -167,7 +185,7 @@ class ConfigManager:
             api_key=self.llm.api_key or _env_api_key(self.llm.provider),
             base_url=self._resolve_base_url(
                 self.llm.provider,
-                self.llm.base_url or os.environ.get("OPENAI_BASE_URL", ""),
+                self.llm.base_url or _env_base_url(self.llm.provider),
             ),
         )
         return config
@@ -180,7 +198,7 @@ class ConfigManager:
             api_key=self.embedder.api_key or _env_api_key(self.embedder.provider),
             base_url=self._resolve_base_url(
                 self.embedder.provider,
-                self.embedder.base_url or os.environ.get("OPENAI_BASE_URL", ""),
+                self.embedder.base_url or _env_base_url(self.embedder.provider),
             ),
         )
         return config
@@ -240,13 +258,28 @@ class ConfigManager:
 
     def validate(self) -> tuple[bool, str]:
         """Validate configuration."""
-        llm_config = self.get_llm_config()
-        embedder_config = self.get_embedder_config()
+        try:
+            llm_config = self.get_llm_config()
+            embedder_config = self.get_embedder_config()
+        except ValueError as exc:
+            return False, str(exc)
 
-        # vLLM mode: api_key can be empty or dummy, but base_url is required
         if llm_config.provider == "vllm":
             if not llm_config.base_url:
                 return False, "vLLM provider requires base_url."
+        elif llm_config.provider == "litellm":
+            if not llm_config.base_url:
+                return (
+                    False,
+                    "LiteLLM provider requires base_url. Run: "
+                    "he config llm -p litellm -u https://your-proxy/v1 -k YOUR_MASTER_KEY",
+                )
+            if not llm_config.api_key:
+                return (
+                    False,
+                    "LiteLLM provider requires a master API key. Run: "
+                    "he config llm -p litellm -k YOUR_MASTER_KEY",
+                )
         elif not llm_config.api_key:
             return (
                 False,
@@ -256,6 +289,19 @@ class ConfigManager:
         if embedder_config.provider == "vllm":
             if not embedder_config.base_url:
                 return False, "vLLM embedder requires base_url."
+        elif embedder_config.provider == "litellm":
+            if not embedder_config.base_url:
+                return (
+                    False,
+                    "LiteLLM embedder requires base_url. Run: "
+                    "he config embedder -p litellm -u https://your-proxy/v1 -k YOUR_MASTER_KEY",
+                )
+            if not embedder_config.api_key:
+                return (
+                    False,
+                    "LiteLLM embedder requires a master API key. Run: "
+                    "he config embedder -p litellm -k YOUR_MASTER_KEY",
+                )
         elif not embedder_config.api_key:
             return (
                 False,

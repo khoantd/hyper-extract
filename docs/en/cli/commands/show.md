@@ -71,9 +71,18 @@ The OntoSight viewer provides:
 
 ### Node Display
 
-- Size indicates importance (configurable)
+- Size indicates importance (scaled by topology `importance` score)
+- Critical and high-tier nodes are highlighted in the viewer
 - Color indicates entity type
 - Label shows entity name
+
+### Critical Nodes Panel
+
+When you open a graph with `he show`, OntoSight displays a **Critical / Hub Nodes** sidebar (if topology data is available):
+
+- Ranked list with degree, tier badges, and articulation markers
+- Click a row to focus and highlight that node in the graph
+- Run `he analyze <ka_path>` in the terminal for the same rankings without opening the browser
 
 ### Edge Display
 
@@ -136,5 +145,6 @@ he show ./ka/
 ## See Also
 
 - [`he parse`](parse.md) — Extract knowledge
+- [`he analyze`](analyze.md) — Rank critical / hub nodes
 - [`he feed`](feed.md) — Add documents incrementally
 - [`he info`](info.md) — View knowledge abstract statistics

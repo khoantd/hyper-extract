@@ -17,6 +17,9 @@ python providers/bailian_demo.py
 
 # 本地 vLLM
 python providers/vllm_demo.py
+
+# 远程 LiteLLM 代理
+python providers/litellm_demo.py
 ```
 
 ### 完整 Auto-Type 演示
@@ -40,7 +43,8 @@ examples/
 ├── providers/                   # Provider 配置示例
 │   ├── openai_demo.py          # OpenAI 配置
 │   ├── bailian_demo.py         # 百炼（阿里云）配置
-│   └── vllm_demo.py            # 本地 vLLM 配置
+│   ├── vllm_demo.py            # 本地 vLLM 配置
+│   └── litellm_demo.py         # 远程 LiteLLM 代理配置
 ├── en/                          # 英文演示
 │   ├── tesla.md                # 特斯拉传记数据
 │   ├── tesla_question.md       # 查询问题

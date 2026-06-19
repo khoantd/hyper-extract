@@ -1,0 +1,10 @@
+{
+  "nodes": [
+    {
+      "name": "mock_name",
+      "type": "mock_type",
+      "description": "mock_description"
+    }
+  ],
+  "edges": []
+}

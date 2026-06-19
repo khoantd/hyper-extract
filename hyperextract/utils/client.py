@@ -44,6 +44,11 @@ PROVIDER_PRESETS: Dict[str, Dict[str, str | None]] = {
         "default_llm": None,
         "default_embedder": None,
     },
+    "litellm": {
+        "base_url": None,
+        "default_llm": None,
+        "default_embedder": None,
+    },
     # Anthropic (Claude). Uses the native ChatAnthropic client, so base_url is
     # left empty (the SDK targets api.anthropic.com by default). Anthropic has
     # no embeddings API, hence default_embedder is None — pair it with an
@@ -64,10 +69,14 @@ PROVIDER_PRESETS: Dict[str, Dict[str, str | None]] = {
 # OpenAI-compatible path.
 ANTHROPIC_PROVIDERS = ("anthropic", "claude")
 
+# OpenAI-compatible providers that require an explicit base_url (local or remote proxy).
+REMOTE_PROXY_PROVIDERS = ("vllm", "litellm")
+
 # Environment variables checked (in order) for each provider's API key.
 PROVIDER_API_KEY_ENV: Dict[str, Tuple[str, ...]] = {
     "anthropic": ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"),
     "claude": ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"),
+    "litellm": ("LITELLM_API_KEY", "LITELLM_MASTER_KEY", "OPENAI_API_KEY"),
 }
 
 

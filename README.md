@@ -123,6 +123,28 @@ llm, emb = create_client(
 
 </details>
 
+<details>
+<summary><b>🌐 Remote LiteLLM Proxy — Route through a central gateway</b></summary>
+<br>
+
+Use a remote LiteLLM proxy as a single OpenAI-compatible endpoint for both LLM and embeddings.
+
+```python
+import os
+from hyperextract import create_client
+llm, emb = create_client(
+    llm=f"litellm:gpt-4o-mini@{os.environ['LITELLM_BASE_URL']}",
+    embedder=f"litellm:text-embedding-3-small@{os.environ['LITELLM_BASE_URL']}",
+    api_key=os.environ["LITELLM_API_KEY"],
+)
+```
+
+```bash
+he config init  # select LiteLLM Proxy
+```
+
+</details>
+
 ## 🚀 Supported Platforms & Models
 
 Hyper-Extract relies on the LLM's structured output capability (`json_schema` or Function Calling).
@@ -133,8 +155,9 @@ Hyper-Extract relies on the LLM's structured output capability (`json_schema` or
 | **Anthropic** | claude-opus-4-8, claude-sonnet-4-6, claude-haiku-4-5 |
 | **阿里云百炼** | qwen-plus, qwen-turbo, deepseek-r1 |
 | **Local vLLM** | Qwen3.5-9B (GPTQ-Marlin) |
+| **LiteLLM Proxy** | Any model configured on your proxy |
 
-**Embedding models** (semantic search) work with any OpenAI-compatible endpoint: `text-embedding-3-small`, `text-embedding-v4` (Bailian), `bge-m3` (local vLLM).
+**Embedding models** (semantic search) work with any OpenAI-compatible endpoint: `text-embedding-3-small`, `text-embedding-v4` (Bailian), `bge-m3` (local vLLM), or models routed through LiteLLM.
 
 > **Anthropic note:** Claude is used for the **LLM** (set `ANTHROPIC_API_KEY`). Anthropic has no embeddings API, so pair it with an OpenAI-compatible embedder:
 > ```python

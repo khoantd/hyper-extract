@@ -17,6 +17,9 @@ python providers/bailian_demo.py
 
 # Local vLLM
 python providers/vllm_demo.py
+
+# Remote LiteLLM proxy
+python providers/litellm_demo.py
 ```
 
 ### Full Auto-Type Demos
@@ -39,7 +42,8 @@ examples/
 ├── providers/                   # Provider configuration demos
 │   ├── openai_demo.py          # OpenAI setup
 │   ├── bailian_demo.py         # Bailian (Alibaba Cloud) setup
-│   └── vllm_demo.py            # Local vLLM setup
+│   ├── vllm_demo.py            # Local vLLM setup
+│   └── litellm_demo.py         # Remote LiteLLM proxy setup
 ├── en/                          # English demos
 │   ├── tesla.md                # Tesla biography data
 │   ├── tesla_question.md       # Query questions

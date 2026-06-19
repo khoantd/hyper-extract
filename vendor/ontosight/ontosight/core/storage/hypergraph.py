@@ -1,0 +1,401 @@
+"""Storage engine for hypergraph visualization."""
+
+from typing import Any, Dict, List, Optional, Set, Tuple, Callable, TypeVar
+from pydantic import BaseModel
+import random
+import logging
+
+from ontosight.utils import get_model_id, get_random_id, default_label_formatter
+from .base import BaseStorage
+from .graph import _apply_topology_to_node
+
+logger = logging.getLogger(__name__)
+
+NodeSchema = TypeVar("NodeSchema", bound=BaseModel)
+EdgeSchema = TypeVar("EdgeSchema", bound=BaseModel)
+
+
+class HypergraphStorage(BaseStorage):
+    """Storage engine for hypergraph visualization."""
+
+    def __init__(
+        self,
+        node_list: List[NodeSchema],
+        edge_list: List[EdgeSchema],
+        node_id_extractor: Callable[[NodeSchema], str],
+        node_ids_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, ...]],
+        edge_label_extractor: Callable[[EdgeSchema], str],
+        node_label_extractor: Optional[Callable[[NodeSchema], str]] = None,
+        node_rankings: Optional[List[Dict[str, Any]]] = None,
+        critical_node_ids: Optional[List[str]] = None,
+    ):
+        """Initialize hypergraph storage from raw schema items.
+
+        Args:
+            node_list: List of node schema objects
+            edge_list: List of hyperedge schema objects
+            node_id_extractor: Function to extract unique ID from node
+            node_ids_in_edge_extractor: Function to extract node ID tuple from hyperedge
+            edge_label_extractor: Function to extract display label from hyperedge
+            node_label_extractor: Optional function to extract display label from node
+        """
+        node_label_extractor = (
+            node_label_extractor
+            if node_label_extractor
+            else lambda n: default_label_formatter(node_id_extractor(n))
+        )
+        edge_id_extractor = get_model_id
+        # Store extractors as class variables for later use
+        self.node_id_extractor = node_id_extractor
+        self.edge_id_extractor = edge_id_extractor
+        self.node_label_extractor = node_label_extractor
+        self.edge_label_extractor = edge_label_extractor
+        self.node_ids_in_edge_extractor = node_ids_in_edge_extractor
+
+        rankings_map = {r["node_id"]: r for r in (node_rankings or []) if r.get("node_id")}
+        critical_set = set(critical_node_ids or [])
+
+        # Create nodes and data
+        self.nodes = {}
+        self.node_deg = {}
+
+        for node in node_list:
+            node_id = node_id_extractor(node)
+            label = node_label_extractor(node)
+            raw_data = node.model_dump() if hasattr(node, "model_dump") else dict(node)
+            self.nodes[node_id] = {"id": node_id, "data": {"label": label, "raw": raw_data}}
+            self.node_deg[node_id] = 0
+
+        # Compute node degrees from hyperedges
+        for edge in edge_list:
+            node_ids_in_edge = node_ids_in_edge_extractor(edge)
+            for node_id in node_ids_in_edge:
+                if node_id in self.nodes:
+                    self.node_deg[node_id] += 1
+
+        # Build hyperedges and auxiliary layout edges
+        self.hyperedges = {}  # {id: {"id": id, "linked_nodes": [node_ids], "data": {"label": label, "raw": raw}}}
+        self.node_to_hyperedges: Dict[str, Set[str]] = {node_id: set() for node_id in self.nodes}
+
+        for i, edge in enumerate(edge_list):
+            edge_label = edge_label_extractor(edge)
+            node_ids_in_edge = node_ids_in_edge_extractor(edge)
+
+            # Map to string IDs and filter valid ones
+            node_ids = [
+                node_id for node_id in node_ids_in_edge if node_id in self.nodes
+            ]
+            if not node_ids:
+                logger.warning(f"Hyperedge has no valid nodes: {edge_label}")
+                continue
+
+            he_id = edge_id_extractor(edge)
+            raw_data = edge.model_dump() if hasattr(edge, "model_dump") else dict(edge)
+
+            self.hyperedges[he_id] = {
+                "id": he_id,
+                "linked_nodes": node_ids,
+                "data": {"label": edge_label, "raw": raw_data},
+            }
+
+            # Register hyperedge in node mapping
+            for node_id in node_ids:
+                self.node_to_hyperedges[node_id].add(he_id)
+
+        for node_id, node_entry in self.nodes.items():
+            _apply_topology_to_node(
+                node_entry,
+                degree=self.node_deg.get(node_id, 0),
+                ranking=rankings_map.get(node_id),
+                highlight=node_id in critical_set,
+            )
+
+        self.stats = self._compute_stats()
+        logger.debug(
+            f"HypergraphStorage initialized: {len(self.nodes)} nodes, {len(self.hyperedges)} hyperedges"
+        )
+
+    def _compute_stats(self) -> Dict[str, Any]:
+        """Compute hypergraph statistics."""
+        if not self.nodes:
+            return {
+                "total_nodes": 0,
+                "total_hyperedges": 0,
+                "avg_node_degree": 0,
+                "avg_hyperedge_degree": 0,
+            }
+
+        total_node_degree = sum(self.node_deg.values())
+        total_hyperedge_degree = sum(
+            len(he.get("linked_nodes", [])) for he in self.hyperedges.values()
+        )
+
+        return {
+            "total_nodes": len(self.nodes),
+            "total_hyperedges": len(self.hyperedges),
+            "avg_node_degree": total_node_degree / len(self.nodes) if self.nodes else 0,
+            "avg_hyperedge_degree": total_hyperedge_degree / len(self.hyperedges)
+            if self.hyperedges
+            else 0,
+        }
+
+    def get_element(self, element_id: str) -> Optional[Dict[str, Any]]:
+        """Get node or hyperedge by ID."""
+        if element_id in self.nodes:
+            return self.nodes[element_id]
+        elif element_id in self.hyperedges:
+            return self.hyperedges[element_id]
+        return None
+
+    def get_details(self, element_id: str) -> Optional[Dict[str, Any]]:
+        """Get full details of a node or hyperedge."""
+        return self.get_element(element_id)
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get hypergraph statistics."""
+        return self.stats
+
+    def get_sample(
+        self,
+        center_ids: Optional[List[str]] = None,
+        hops: int = 2,
+        highlight_center: bool = False,
+        min_nodes: int = 10,
+        max_attempts: int = 5,
+    ) -> Dict[str, Any]:
+        """Get sub-hypergraph around given nodes/hyperedges via hyperedge neighborhoods.
+
+        Args:
+            center_ids: List of node or hyperedge IDs to use as starting points
+            hops: Number of hops to expand via hyperedge connections
+            highlight_center: If True, mark center nodes/hyperedges with highlighted=True
+            min_nodes: Minimum number of nodes to include in the sample
+            max_attempts: Maximum number of attempts to find a suitable center
+
+        Returns:
+            Dict with 'nodes', 'edges', and 'hyperedges' keys
+        """
+        if not center_ids:
+            all_nodes = list(self.nodes.keys())
+            if not all_nodes:
+                return {"nodes": [], "edges": [], "hyperedges": []}
+
+            all_node_ids = set()
+            all_edge_ids = set()
+            all_hyperedge_ids = set()
+            result_nodes = []
+            result_edges = []
+            result_hyperedges = []
+
+            for _ in range(max_attempts):
+                current_center = [random.choice(all_nodes)]
+
+                sample = self._get_sample_with_center(current_center, hops, highlight_center)
+
+                for node in sample["nodes"]:
+                    if node["id"] not in all_node_ids:
+                        all_node_ids.add(node["id"])
+                        result_nodes.append(node)
+
+                for edge in sample["edges"]:
+                    if edge["id"] not in all_edge_ids:
+                        all_edge_ids.add(edge["id"])
+                        result_edges.append(edge)
+
+                for hyperedge in sample["hyperedges"]:
+                    if hyperedge["id"] not in all_hyperedge_ids:
+                        all_hyperedge_ids.add(hyperedge["id"])
+                        result_hyperedges.append(hyperedge)
+
+                if len(result_nodes) >= min_nodes:
+                    return {
+                        "nodes": result_nodes,
+                        "edges": result_edges,
+                        "hyperedges": result_hyperedges,
+                    }
+
+            return {
+                "nodes": result_nodes,
+                "edges": result_edges,
+                "hyperedges": result_hyperedges,
+            }
+
+        return self._get_sample_with_center(center_ids, hops, highlight_center)
+
+    def _get_sample_with_center(
+        self,
+        center_ids: List[str],
+        hops: int,
+        highlight_center: bool,
+    ) -> Dict[str, Any]:
+        """Internal method to get sample with given center IDs."""
+        if not center_ids:
+            return {"nodes": [], "edges": [], "hyperedges": []}
+
+        visited_nodes = set()
+        visited_hyperedges = set()
+        center_node_ids = set()
+        center_hyperedge_ids = set()
+
+        for element_id in center_ids:
+            if element_id in self.nodes:
+                visited_nodes.add(element_id)
+                if highlight_center:
+                    center_node_ids.add(element_id)
+            elif element_id in self.hyperedges:
+                visited_hyperedges.add(element_id)
+                if highlight_center:
+                    center_hyperedge_ids.add(element_id)
+                hyperedge_data = self.hyperedges[element_id]
+                for node_in_he in hyperedge_data.get("linked_nodes", []):
+                    visited_nodes.add(node_in_he)
+
+        if not visited_nodes:
+            return {"nodes": [], "edges": [], "hyperedges": []}
+
+        current_layer = set(visited_nodes)
+
+        for _ in range(hops):
+            next_layer = set()
+            for node_id in current_layer:
+                for he_id in self.node_to_hyperedges.get(node_id, set()):
+                    if he_id not in visited_hyperedges:
+                        visited_hyperedges.add(he_id)
+                        for node_in_he in self.hyperedges[he_id].get("linked_nodes", []):
+                            if node_in_he not in visited_nodes:
+                                next_layer.add(node_in_he)
+                                visited_nodes.add(node_in_he)
+
+            current_layer = next_layer
+
+        sub_nodes = []
+        for node_id in visited_nodes:
+            node_data = dict(self.nodes[node_id])
+            if highlight_center and node_id in center_node_ids:
+                node_data["highlighted"] = True
+            sub_nodes.append(node_data)
+
+        sub_hyperedges = []
+        for he_id in visited_hyperedges:
+            he_data = dict(self.hyperedges[he_id])
+            if highlight_center and he_id in center_hyperedge_ids:
+                he_data["highlighted"] = True
+            sub_hyperedges.append(he_data)
+
+        sub_edges = []
+        for sub_hyperedge in sub_hyperedges:
+            node_list = sub_hyperedge.get("linked_nodes", [])
+            if not node_list:
+                continue
+            center_node_id = min(node_list, key=lambda nid: self.node_deg.get(nid, 0))
+            for node_id in node_list:
+                if node_id != center_node_id:
+                    edge_id = f"edge-{sub_hyperedge['id']}-{node_id}"
+                    sub_edges.append(
+                        {
+                            "id": edge_id,
+                            "source": center_node_id,
+                            "target": node_id,
+                        }
+                    )
+
+        logger.debug(
+            f"[HypergraphStorage] get_sample: {len(sub_nodes)} nodes, {len(sub_hyperedges)} hyperedges, {len(sub_edges)} layout edges"
+        )
+        return {
+            "nodes": sub_nodes,
+            "edges": sub_edges,
+            "hyperedges": sub_hyperedges,
+        }
+
+    def get_all_nodes_paginated(self, page: int = 0, page_size: int = 30) -> Dict[str, Any]:
+        """Get paginated list of all nodes."""
+        node_items = list(self.nodes.values())
+        total = len(node_items)
+        start = page * page_size
+        end = start + page_size
+
+        items = []
+        for node in node_items[start:end]:
+            item = dict(node)
+            item["label"] = node.get("data", {}).get("label", node.get("id"))
+            item["type"] = "node"
+            items.append(item)
+
+        return {
+            "items": items,
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "has_next": end < total,
+        }
+
+    def get_all_hyperedges_paginated(self, page: int = 0, page_size: int = 30) -> Dict[str, Any]:
+        """Get paginated list of all hyperedges."""
+        he_items = list(self.hyperedges.values())
+        total = len(he_items)
+        start = page * page_size
+        end = start + page_size
+
+        items = []
+        for he in he_items[start:end]:
+            item = dict(he)
+            item["label"] = he.get("data", {}).get("label", he.get("id"))
+            item["type"] = "hyperedge"
+            items.append(item)
+
+        return {
+            "items": items,
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "has_next": end < total,
+        }
+
+    def get_sample_from_data(
+        self,
+        node_list: List[NodeSchema],
+        hyperedge_list: List[EdgeSchema],
+        hops: int = 2,
+        highlight_center: bool = False,
+    ) -> Dict[str, Any]:
+        """Get sample based on raw node and hyperedge data objects.
+
+        Extracts IDs from the provided raw data using extractors and label_to_id mapping.
+
+        Args:
+            node_list: List of NodeSchema objects to extract IDs from
+            hyperedge_list: List of EdgeSchema objects to extract IDs from
+            hops: Number of hops for neighborhood expansion
+            highlight_center: If True, mark center elements with highlighted=True
+
+        Returns:
+            Dict with 'nodes', 'edges', and 'hyperedges' keys containing the sub-hypergraph,
+            may include 'highlighted' bool for center elements if highlight_center=True
+        """
+        # Extract node IDs using node extractor and label_to_id mapping
+        node_ids = []
+        for node in node_list:
+            node_id = self.node_id_extractor(node)
+            if node_id in self.nodes:
+                node_ids.append(node_id)
+            else:
+                logger.debug(f"Node {self.node_label_extractor(node)} not found in hypergraph")
+
+        # Extract hyperedge IDs using edge extractor and label lookup
+        hyperedge_ids = []
+        for hyperedge in hyperedge_list:
+            hyperedge_id = self.edge_id_extractor(hyperedge)
+            if hyperedge_id in self.hyperedges:
+                hyperedge_ids.append(hyperedge_id)
+            else:
+                logger.debug(
+                    f"Hyperedge {self.edge_label_extractor(hyperedge)} not found in hypergraph"
+                )
+
+        # Combine node and hyperedge IDs and call get_sample
+        all_ids = node_ids + hyperedge_ids
+        if all_ids:
+            return self.get_sample(center_ids=all_ids, hops=hops, highlight_center=highlight_center)
+        else:
+            return {"nodes": [], "edges": [], "hyperedges": []}

@@ -1,0 +1,512 @@
+{
+  "nodes": [
+    {
+      "name": "Nikola Tesla",
+      "type": "person",
+      "description": "Serbian-American inventor, electrical engineer, mechanical engineer, and futurist known for contributions to the modern alternating current electricity supply system and his contributions to the development of AC power."
+    },
+    {
+      "name": "Smiljan",
+      "type": "location",
+      "description": "Village where Nikola Tesla was born, part of the Austrian Empire (now Croatia)."
+    },
+    {
+      "name": "Austrian Empire",
+      "type": "location",
+      "description": "Historical empire where Smiljan was located at the time of Tesla's birth."
+    },
+    {
+      "name": "Orthodox priest",
+      "type": "occupation",
+      "description": "Tesla's father's profession."
+    },
+    {
+      "name": "inventor of household appliances",
+      "type": "occupation",
+      "description": "Tesla's mother's profession."
+    },
+    {
+      "name": "Austrian Polytechnic",
+      "type": "organization",
+      "description": "Institution where Tesla studied engineering."
+    },
+    {
+      "name": "Graz",
+      "type": "location",
+      "description": "City in Austria where the Austrian Polytechnic is located."
+    },
+    {
+      "name": "Charles-Ferdinand University",
+      "type": "organization",
+      "description": "University in Prague that Tesla attended."
+    },
+    {
+      "name": "Prague",
+      "type": "location",
+      "description": "City in the Czech Republic where the Charles-Ferdinand University is located."
+    },
+    {
+      "name": "Budapest",
+      "type": "location",
+      "description": "City where Tesla worked at the Central Telephone Exchange."
+    },
+    {
+      "name": "Central Telephone Exchange",
+      "type": "organization",
+      "description": "Place where Tesla conceived the idea for the induction motor."
+    },
+    {
+      "name": "Thomas Edison",
+      "type": "person",
+      "description": "Famous inventor and founder of the Edison Electric Light Company, for whom Tesla worked. Former employer and main rival of Tesla in the 'War of Currents'."
+    },
+    {
+      "name": "Edison Electric Light Company",
+      "type": "organization",
+      "description": "Company established by Thomas Edison."
+    },
+    {
+      "name": "Tesla Electric Company",
+      "type": "organization",
+      "description": "Company founded by Tesla in 1887."
+    },
+    {
+      "name": "AC induction motor",
+      "type": "work",
+      "description": "Device developed by Tesla that uses alternating current to create a rotating magnetic field."
+    },
+    {
+      "name": "Tesla coil",
+      "type": "work/invention",
+      "description": "Device developed by Tesla that is essential for the AC power system. Device demonstrated by Tesla in 1891."
+    },
+    {
+      "name": "George Westinghouse",
+      "type": "person",
+      "description": "Founder of Westinghouse Electric Company who bought the patents to Tesla's AC system. Key business partner of Tesla who commercialized his AC patents."
+    },
+    {
+      "name": "Westinghouse Electric Company",
+      "type": "organization",
+      "description": "Company founded by George Westinghouse."
+    },
+    {
+      "name": "War of Currents",
+      "type": "event",
+      "description": "Conflict between Edison (advocating DC power) and Tesla/Westinghouse (advocating AC power)."
+    },
+    {
+      "name": "Edison",
+      "type": "person",
+      "description": "Advocate of DC power and competitor of Tesla and Westinghouse."
+    },
+    {
+      "name": "World's Columbian Exposition",
+      "type": "event",
+      "description": "Event in Chicago that chose AC power for its electrical system. Event for which Tesla won the contract to provide power."
+    },
+    {
+      "name": "Colorado Springs",
+      "type": "location",
+      "description": "Location where Tesla conducted experiments on wireless power transmission and moved for experiments in 1899."
+    },
+    {
+      "name": "Wardenclyffe Tower",
+      "type": "work",
+      "description": "Ambitious project by Tesla intended to transmit messages and power wirelessly across the Atlantic Ocean. Project funded by J.P. Morgan and associated with Tesla's work on wireless transmission."
+    },
+    {
+      "name": "J.P. Morgan",
+      "type": "person",
+      "description": "Main backer of Tesla's Wardenclyffe Tower project. Initial financial backer of the Wardenclyffe Tower project."
+    },
+    {
+      "name": "Shoreham, New York",
+      "type": "location",
+      "description": "Location where the Wardenclyffe Tower was constructed."
+    },
+    {
+      "name": "interplanetary messages",
+      "type": "concept",
+      "description": "Signals Tesla believed he received from extraterrestrial intelligence."
+    },
+    {
+      "name": "New York City",
+      "type": "location",
+      "description": "City where Tesla spent his later years and died."
+    },
+    {
+      "name": "New Yorker Hotel",
+      "type": "location",
+      "description": "Hotel where Tesla died alone."
+    },
+    {
+      "name": "Edison's DC supporters",
+      "type": "person",
+      "description": "Group that conducted a campaign to discredit Tesla's AC system."
+    },
+    {
+      "name": "Guglielmo Marconi",
+      "type": "person",
+      "description": "Italian inventor who competed with Tesla over radio patents."
+    },
+    {
+      "name": "Mark Twain",
+      "type": "person",
+      "description": "Famous American writer and close friend of Tesla who visited his laboratory."
+    },
+    {
+      "name": "Swami Vivekananda",
+      "type": "person",
+      "description": "Indian philosopher who discussed science and religion with Tesla."
+    },
+    {
+      "name": "telautodynamics",
+      "type": "concept",
+      "description": "System for transmitting mechanical power using radio waves, described by Tesla in a manifesto."
+    },
+    {
+      "name": "induction motor",
+      "type": "concept",
+      "description": "Idea conceived by Tesla in Budapest."
+    }
+  ],
+  "edges": [
+    {
+      "source": "Nikola Tesla",
+      "target": "Smiljan",
+      "type": "born_in",
+      "time": "1856-07-10",
+      "description": "Nikola Tesla was born in the village of Smiljan."
+    },
+    {
+      "source": "Smiljan",
+      "target": "Austrian Empire",
+      "type": "part_of",
+      "time": "",
+      "description": "Smiljan was part of the Austrian Empire at the time of Tesla's birth."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Orthodox priest",
+      "type": "father_of",
+      "time": "",
+      "description": "Nikola Tesla's father was an Orthodox priest."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "inventor of household appliances",
+      "type": "mother_of",
+      "time": "",
+      "description": "Nikola Tesla's mother was an inventor of household appliances."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Austrian Polytechnic",
+      "type": "studied_at",
+      "time": "",
+      "description": "Nikola Tesla studied engineering at the Austrian Polytechnic in Graz."
+    },
+    {
+      "source": "Austrian Polytechnic",
+      "target": "Graz",
+      "type": "located_in",
+      "time": "",
+      "description": "Austrian Polytechnic is located in Graz."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Charles-Ferdinand University",
+      "type": "studied_at",
+      "time": "",
+      "description": "Nikola Tesla attended the Charles-Ferdinand University in Prague."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Prague",
+      "type": "located_in",
+      "time": "",
+      "description": "Charles-Ferdinand University is located in Prague."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Budapest",
+      "type": "moved_to",
+      "time": "1882",
+      "description": "Nikola Tesla moved to Budapest in 1882."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Central Telephone Exchange",
+      "type": "worked_at",
+      "time": "1882",
+      "description": "Nikola Tesla worked at the Central Telephone Exchange in Budapest."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "AC induction motor",
+      "type": "conceived",
+      "time": "1882",
+      "description": "Nikola Tesla conceived the idea for the AC induction motor while working at the Central Telephone Exchange."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Thomas Edison",
+      "type": "worked_for",
+      "time": "1884",
+      "description": "Nikola Tesla went to work for Thomas Edison in 1884."
+    },
+    {
+      "source": "Thomas Edison",
+      "target": "Edison Electric Light Company",
+      "type": "established",
+      "time": "",
+      "description": "Thomas Edison was establishing the Edison Electric Light Company at the time Tesla worked for him."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Edison Electric Light Company",
+      "type": "worked_for",
+      "time": "1884",
+      "description": "Nikola Tesla worked for the Edison Electric Light Company."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "War of Currents",
+      "type": "involved_in",
+      "time": "",
+      "description": "The War of Currents was a conflict between Tesla and Edison."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Tesla Electric Company",
+      "type": "founded",
+      "time": "1887",
+      "description": "Nikola Tesla founded the Tesla Electric Company in 1887."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "AC induction motor",
+      "type": "developed",
+      "time": "",
+      "description": "Nikola Tesla developed the AC induction motor."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Tesla coil",
+      "type": "developed",
+      "time": "",
+      "description": "Nikola Tesla developed the Tesla coil."
+    },
+    {
+      "source": "George Westinghouse",
+      "target": "Westinghouse Electric Company",
+      "type": "founded",
+      "time": "",
+      "description": "George Westinghouse founded the Westinghouse Electric Company."
+    },
+    {
+      "source": "George Westinghouse",
+      "target": "Tesla Electric Company",
+      "type": "bought_patents_from",
+      "time": "",
+      "description": "George Westinghouse bought the patents to Tesla's AC system."
+    },
+    {
+      "source": "Edison",
+      "target": "War of Currents",
+      "type": "advocated",
+      "time": "",
+      "description": "Edison advocated for DC power during the War of Currents."
+    },
+    {
+      "source": "George Westinghouse",
+      "target": "Nikola Tesla",
+      "type": "bought_patents_to",
+      "time": "",
+      "description": "Westinghouse bought the patents to Tesla's AC system."
+    },
+    {
+      "source": "George Westinghouse",
+      "target": "Westinghouse Electric Company",
+      "type": "founder_of",
+      "time": "",
+      "description": "Westinghouse is the founder of Westinghouse Electric Company."
+    },
+    {
+      "source": "George Westinghouse",
+      "target": "Edison",
+      "type": "involved_in",
+      "time": "",
+      "description": "Westinghouse was involved in the 'War of Currents' against Edison."
+    },
+    {
+      "source": "Edison",
+      "target": "Nikola Tesla",
+      "type": "opposed_by",
+      "time": "",
+      "description": "Edison opposed Tesla's AC power."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Westinghouse Electric Company",
+      "type": "advocated_for",
+      "time": "",
+      "description": "Tesla advocated for AC power alongside Westinghouse."
+    },
+    {
+      "source": "Westinghouse Electric Company",
+      "target": "World's Columbian Exposition",
+      "type": "contracted_for",
+      "time": "1893",
+      "description": "Westinghouse Electric Company won the contract to generate electricity for the World's Columbian Exposition."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Colorado Springs",
+      "type": "moved_to",
+      "time": "1899",
+      "description": "Tesla moved to Colorado Springs to conduct experiments."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "interplanetary messages",
+      "type": "received_signals_of",
+      "time": "",
+      "description": "Tesla believed he received signals from extraterrestrial intelligence, which he called 'interplanetary messages'."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Wardenclyffe Tower",
+      "type": "began_construction_of",
+      "time": "1901",
+      "description": "Tesla began construction of the Wardenclyffe Tower."
+    },
+    {
+      "source": "Wardenclyffe Tower",
+      "target": "J.P. Morgan",
+      "type": "backed_by",
+      "time": "",
+      "description": "Tesla's Wardenclyffe Tower project was backed by J.P. Morgan."
+    },
+    {
+      "source": "J.P. Morgan",
+      "target": "Wardenclyffe Tower",
+      "type": "withdrew_support_for",
+      "time": "",
+      "description": "J.P. Morgan withdrew support for the Wardenclyffe Tower project."
+    },
+    {
+      "source": "Wardenclyffe Tower",
+      "target": "Shoreham, New York",
+      "type": "located_in",
+      "time": "",
+      "description": "Wardenclyffe Tower was located in Shoreham, New York."
+    },
+    {
+      "source": "Wardenclyffe Tower",
+      "target": "Nikola Tesla",
+      "type": "project_of",
+      "time": "",
+      "description": "Wardenclyffe Tower was an ambitious project of Nikola Tesla."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "New York City",
+      "type": "lived_in",
+      "time": "",
+      "description": "Spent his later years living in hotels in New York City."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "New Yorker Hotel",
+      "type": "died_in",
+      "time": "1943-01-07",
+      "description": "Died alone in Room 3327 of the New Yorker Hotel."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "telautodynamics",
+      "type": "wrote_manifesto_about",
+      "time": "",
+      "description": "Wrote a manifesto about telautodynamics, describing a system for transmitting mechanical power using radio waves."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Thomas Edison",
+      "type": "former_employer",
+      "time": "",
+      "description": "Former employer and main rival in the 'War of Currents'."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Edison's DC supporters",
+      "type": "rivalry",
+      "time": "",
+      "description": "Conducted a campaign to discredit Tesla's AC system."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Guglielmo Marconi",
+      "type": "competed_with",
+      "time": "",
+      "description": "Competed with Tesla over radio patents."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "George Westinghouse",
+      "type": "business_partner",
+      "time": "",
+      "description": "Key business partner who commercialized his AC patents."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "J.P. Morgan",
+      "type": "financial_backer",
+      "time": "",
+      "description": "Initial financial backer of Wardenclyffe Tower project."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Mark Twain",
+      "type": "friend",
+      "time": "",
+      "description": "Close friend who visited Tesla's laboratory."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Swami Vivekananda",
+      "type": "discussed_with",
+      "time": "",
+      "description": "Discussed science and religion with Tesla."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "induction motor",
+      "type": "conceived",
+      "time": "1882",
+      "description": "Conceived the idea of the induction motor."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "Tesla coil",
+      "type": "demonstrated",
+      "time": "1891",
+      "description": "Demonstrated the Tesla coil."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "World's Columbian Exposition",
+      "type": "won_contract_to_power",
+      "time": "1893",
+      "description": "Won the contract to power the World's Columbian Exposition."
+    },
+    {
+      "source": "Nikola Tesla",
+      "target": "New York City",
+      "type": "died_in",
+      "time": "1943",
+      "description": "Died in New York City."
+    }
+  ]
+}

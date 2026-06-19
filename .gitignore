@@ -170,3 +170,4 @@ kb/
 
 # Claude superpowers plans (keep repo docs clean)
 docs/superpowers/
+.codegraph/

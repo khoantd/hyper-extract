@@ -1,6 +1,6 @@
 # Provider Configuration Guide
 
-Configure Hyper-Extract to work with OpenAI, Bailian (Alibaba Cloud), or local vLLM deployments.
+Configure Hyper-Extract to work with OpenAI, Bailian (Alibaba Cloud), local vLLM, or remote LiteLLM proxy deployments.
 
 ---
 
@@ -37,6 +37,20 @@ llm, emb = create_client(
 )
 ```
 
+### Remote LiteLLM Proxy
+
+```python
+import os
+from hyperextract import create_client, AutoGraph
+
+proxy_url = os.environ["LITELLM_BASE_URL"]  # e.g. https://litellm.example.com/v1
+llm, emb = create_client(
+    llm=f"litellm:gpt-4o-mini@{proxy_url}",
+    embedder=f"litellm:text-embedding-3-small@{proxy_url}",
+    api_key=os.environ["LITELLM_API_KEY"],
+)
+```
+
 ### Extraction Task (same for all)
 
 ```python
@@ -63,6 +77,7 @@ print(f"Nodes: {len(graph.nodes)}, Edges: {len(graph.edges)}")
 | **OpenAI** | `he config init -p openai -k sk-xxx` |
 | **Bailian** | `he config init -p bailian -k sk-xxx` |
 | **vLLM** | `he config init` → select "local vLLM" |
+| **LiteLLM** | `he config init` → select "LiteLLM Proxy", or `he config llm -p litellm -u https://proxy/v1 -k MASTER_KEY -m gpt-4o-mini` |
 | **Mixed** (LLM=Bailian, Embedder=vLLM) | `he config llm -p bailian -k sk-xxx` + `he config embedder -p vllm -u http://localhost:8001/v1 -k dummy` |
 
 ---

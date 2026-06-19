@@ -34,7 +34,7 @@ dependencies = [
     "langchain-openai>=1.1.7",
     "structlog>=25.5.0",
     "ontomem>=0.2.3",
-    "ontosight>=0.1.8",
+    "ontosight>=0.2.0",
     "python-dotenv>=1.2.1",
     "semhash>=0.4.1",
     # cli dependencies
@@ -92,6 +92,9 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["hyperextract"]
+
+[tool.uv.sources]
+ontosight = { path = "vendor/ontosight", editable = true }
 
 [tool.ruff.lint]
 ignore = ["E731"]

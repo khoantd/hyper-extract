@@ -123,6 +123,28 @@ llm, emb = create_client(
 
 </details>
 
+<details>
+<summary><b>🌐 远程 LiteLLM 代理 — 统一网关路由</b></summary>
+<br>
+
+通过远程 LiteLLM 代理，使用单一 OpenAI 兼容端点同时访问 LLM 与嵌入模型。
+
+```python
+import os
+from hyperextract import create_client
+llm, emb = create_client(
+    llm=f"litellm:gpt-4o-mini@{os.environ['LITELLM_BASE_URL']}",
+    embedder=f"litellm:text-embedding-3-small@{os.environ['LITELLM_BASE_URL']}",
+    api_key=os.environ["LITELLM_API_KEY"],
+)
+```
+
+```bash
+he config init  # 选择 LiteLLM Proxy
+```
+
+</details>
+
 ## 🚀 支持的平台与模型
 
 Hyper-Extract 依赖大语言模型的结构化输出能力（`json_schema` 或 Function Calling）。
@@ -133,8 +155,9 @@ Hyper-Extract 依赖大语言模型的结构化输出能力（`json_schema` 或 
 | **Anthropic** | claude-opus-4-8, claude-sonnet-4-6, claude-haiku-4-5 |
 | **阿里云百炼** | qwen-plus, qwen-turbo, deepseek-r1 |
 | **本地 vLLM** | Qwen3.5-9B (GPTQ-Marlin) |
+| **LiteLLM 代理** | 代理上配置的任意模型 |
 
-**嵌入模型**（语义搜索）支持任意 OpenAI 兼容端点：`text-embedding-3-small`、`text-embedding-v4`（百炼）、`bge-m3`（本地 vLLM）。
+**嵌入模型**（语义搜索）支持任意 OpenAI 兼容端点：`text-embedding-3-small`、`text-embedding-v4`（百炼）、`bge-m3`（本地 vLLM），或通过 LiteLLM 路由的模型。
 
 > **Anthropic 说明：** Claude 仅用于 **LLM**（设置 `ANTHROPIC_API_KEY`）。Anthropic 没有嵌入接口，请搭配 OpenAI 兼容的嵌入模型使用：
 > ```python

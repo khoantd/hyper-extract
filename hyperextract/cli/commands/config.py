@@ -1,7 +1,8 @@
 """Config command for Hyper-Extract CLI."""
 
-from typing import Optional
+from typing import Optional, Tuple
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
@@ -12,11 +13,125 @@ import typer
 logger = get_logger("he.config")
 console = Console()
 
+_PROVIDER_HELP = "Provider preset: openai, anthropic, bailian, vllm, litellm"
+
 app = typer.Typer(
     name="config",
     help="Manage LLM and Embedder configuration",
     invoke_without_command=True,
 )
+
+
+def _normalize_proxy_url(url: str) -> str:
+    """Ensure proxy URL uses http(s) and ends with /v1 when appropriate."""
+    url = url.strip().rstrip("/")
+    if not url:
+        return url
+    if not url.startswith(("http://", "https://")):
+        console.print(
+            "  [yellow]URL should start with http:// or https:// — prepending https://[/yellow]"
+        )
+        url = f"https://{url}"
+    if not url.endswith("/v1"):
+        console.print("  [dim]Appending /v1 to base URL[/dim]")
+        url = f"{url}/v1"
+    return url
+
+
+def _prompt_api_key(*, allow_dummy: bool = False) -> str:
+    """Prompt until a non-empty API key is entered (or dummy for local vLLM)."""
+    while True:
+        api_key = console.input("  API Key: ").strip()
+        if api_key:
+            return api_key
+        if allow_dummy:
+            console.print("  [dim]Using 'dummy' for vLLM[/dim]")
+            return "dummy"
+        console.print("  [red]API Key is required. Please enter your API key.[/red]")
+
+
+def _prompt_remote_proxy(
+    provider: str,
+    *,
+    allow_dummy_key: bool = False,
+    shared_base_url: str = "",
+) -> Tuple[str, str, str]:
+    """Prompt for model, base URL, and API key for remote/local proxy providers."""
+    if provider == "litellm":
+        if shared_base_url:
+            base_url = shared_base_url
+        else:
+            raw_url = console.input(
+                "  Proxy Base URL (e.g. https://litellm.example.com/v1): "
+            ).strip()
+            base_url = _normalize_proxy_url(raw_url)
+        model = console.input(
+            "  LLM Model (e.g. gpt-4o-mini): "
+        ).strip()
+    elif provider == "vllm":
+        model = console.input("  LLM Model: ").strip()
+        base_url = console.input(
+            "  LLM Base URL (e.g. http://localhost:8000/v1): "
+        ).strip()
+    else:
+        model = ""
+        base_url = shared_base_url
+
+    api_key = _prompt_api_key(allow_dummy=allow_dummy_key)
+    return model, base_url, api_key
+
+
+def _print_config_summary(
+    *,
+    provider: str,
+    llm_model: str,
+    emb_model: str,
+    base_url: str,
+    api_key: str,
+) -> None:
+    """Print a Rich panel summarizing saved configuration."""
+    lines = [
+        f"[cyan]Provider:[/cyan]       {provider}",
+        f"[cyan]Proxy URL:[/cyan]      {base_url or '(default)'}",
+        f"[cyan]LLM Model:[/cyan]      {llm_model}",
+        f"[cyan]Embedder Model:[/cyan] {emb_model}",
+        f"[cyan]API Key:[/cyan]        {api_key[:10]}..." if api_key else "[cyan]API Key:[/cyan]        (not set)",
+    ]
+    console.print(
+        Panel(
+            "\n".join(lines),
+            title="[bold green]Configuration Saved[/bold green]",
+            border_style="green",
+        )
+    )
+    console.print("[dim]Run [bold cyan]he config show[/bold cyan] to verify settings.[/dim]")
+
+
+def _print_provider_table() -> list[tuple[str, str, str, str]]:
+    """Render provider selection table and return provider options."""
+    providers = [
+        ("openai", "OpenAI", "Cloud", "api.openai.com/v1"),
+        ("bailian", "Bailian", "Cloud", "dashscope compatible-mode/v1"),
+        ("vllm", "vLLM", "Local", "localhost:8000/v1"),
+        ("litellm", "LiteLLM Proxy", "Remote proxy", "your-host:4000/v1"),
+        ("custom", "Custom", "OpenAI-compatible", "custom URL"),
+    ]
+
+    table = Table(
+        title="Step 1: Choose Provider",
+        show_header=True,
+        header_style="bold cyan",
+    )
+    table.add_column("#", style="dim", width=3)
+    table.add_column("Provider", style="cyan", width=18)
+    table.add_column("Type", style="blue", width=16)
+    table.add_column("Endpoint hint", style="dim")
+
+    for i, (_key, name, ptype, hint) in enumerate(providers, 1):
+        table.add_row(str(i), name, ptype, hint)
+
+    console.print(table)
+    return providers
 
 
 @app.callback()
@@ -89,6 +204,12 @@ def config_callback(
         "  [green]ANTHROPIC_API_KEY[/green] - Anthropic/Claude API key (or CLAUDE_API_KEY)"
     )
     console.print("  [green]OPENAI_BASE_URL[/green] - Custom API base URL (optional)")
+    console.print(
+        "  [green]LITELLM_BASE_URL[/green] - LiteLLM proxy URL (when provider is litellm)"
+    )
+    console.print(
+        "  [green]LITELLM_API_KEY[/green] - LiteLLM master key (or LITELLM_MASTER_KEY)"
+    )
     console.print()
 
     console.print(Rule(style="cyan dim"))
@@ -151,7 +272,7 @@ def llm(
         None,
         "--provider",
         "-p",
-        help="Provider preset: openai, anthropic, bailian, vllm",
+        help=_PROVIDER_HELP,
     ),
     api_key: Optional[str] = typer.Option(
         None,
@@ -212,7 +333,7 @@ def embedder(
         None,
         "--provider",
         "-p",
-        help="Provider preset: openai, anthropic, bailian, vllm",
+        help=_PROVIDER_HELP,
     ),
     api_key: Optional[str] = typer.Option(
         None,
@@ -275,7 +396,7 @@ def init(
         None,
         "--provider",
         "-p",
-        help="Provider preset: openai, anthropic, bailian, vllm",
+        help=_PROVIDER_HELP,
     ),
     api_key: Optional[str] = typer.Option(
         None,
@@ -300,13 +421,22 @@ def init(
 
     # Quick mode: provider + api_key provided
     if provider and api_key:
-        from hyperextract.utils.client import PROVIDER_PRESETS
+        from hyperextract.utils.client import PROVIDER_PRESETS, REMOTE_PROXY_PROVIDERS
 
         preset = PROVIDER_PRESETS.get(provider, {})
-        llm_model = preset.get("default_llm") or "gpt-4o-mini"
-        emb_model = preset.get("default_embedder") or "text-embedding-3-small"
         preset_url = preset.get("base_url") or ""
         resolved_base = base_url or preset_url
+
+        if provider in REMOTE_PROXY_PROVIDERS and not resolved_base:
+            console.print(
+                f"[red]Error:[/red] Provider '{provider}' requires --base-url.\n"
+                f"  Example: he config init -p {provider} -k YOUR_KEY "
+                f"-u https://your-proxy/v1"
+            )
+            raise typer.Exit(1)
+
+        llm_model = preset.get("default_llm") or "gpt-4o-mini"
+        emb_model = preset.get("default_embedder") or "text-embedding-3-small"
 
         config.set_llm(
             provider=provider,
@@ -323,19 +453,17 @@ def init(
             )
         else:
             console.print(
-                "[yellow]Warning: Provider '{}' has no default embedder. Please configure embedder separately.[/yellow]".format(
-                    provider
-                )
+                "[yellow]Warning: Provider '{}' has no default embedder. "
+                "Please configure embedder separately.[/yellow]".format(provider)
             )
 
-        console.print("[bold green]Configuration saved successfully![/bold green]")
-        console.print()
-        console.print("[bold]Current settings:[/bold]")
-        console.print(f"  [cyan]Provider:[/cyan] {provider}")
-        console.print(f"  [cyan]LLM Model:[/cyan] {llm_model}")
-        if emb_model:
-            console.print(f"  [cyan]Embedder Model:[/cyan] {emb_model}")
-        console.print(f"  [cyan]Base URL:[/cyan] {resolved_base or '(default)'}")
+        _print_config_summary(
+            provider=provider,
+            llm_model=llm_model,
+            emb_model=emb_model or "(configure separately)",
+            base_url=resolved_base,
+            api_key=api_key,
+        )
         return
 
     # Legacy quick mode: only api_key provided (OpenAI defaults)
@@ -352,34 +480,24 @@ def init(
             api_key=api_key,
             base_url=base_url,
         )
-        console.print("[bold green]Configuration saved successfully![/bold green]")
-        console.print()
-        console.print("[bold]Current settings:[/bold]")
-        console.print("  [cyan]Provider:[/cyan] openai")
-        console.print("  [cyan]LLM Model:[/cyan] gpt-4o-mini")
-        console.print("  [cyan]Embedder Model:[/cyan] text-embedding-3-small")
-        console.print("  [cyan]API Key:[/cyan] " + api_key[:10] + "...")
-        if base_url:
-            console.print(f"  [cyan]Base URL:[/cyan] {base_url}")
+        _print_config_summary(
+            provider="openai",
+            llm_model="gpt-4o-mini",
+            emb_model="text-embedding-3-small",
+            base_url=base_url or "",
+            api_key=api_key,
+        )
         return
 
     # Interactive mode
-    console.print("[bold blue]Hyper-Extract Configuration Setup[/bold blue]")
+    console.print("[bold cyan]Hyper-Extract Configuration Setup[/bold cyan]")
     console.print()
 
     from hyperextract.utils.client import PROVIDER_PRESETS
 
-    console.print("[bold]Step 1: Choose Provider[/bold]")
-    providers = [
-        ("openai", "OpenAI", "https://api.openai.com/v1"),
-        ("bailian", "阿里云百炼", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
-        ("vllm", "本地 vLLM", "自定义地址"),
-        ("custom", "其他 OpenAI 兼容接口", "自定义地址"),
-    ]
-    for i, (key, name, url) in enumerate(providers, 1):
-        console.print(f"  [{i}] {name:<20} ({url})")
-
-    choice = console.input("\n请选择 [1-4]: ").strip()
+    providers = _print_provider_table()
+    console.print()
+    choice = console.input("Select provider [1-5]: ").strip()
     try:
         selected = providers[int(choice) - 1][0] if choice.isdigit() else "openai"
     except (IndexError, ValueError):
@@ -393,11 +511,53 @@ def init(
     console.print()
     console.print(f"[bold]Step 2: LLM Configuration (Provider: {selected})[/bold]")
 
-    if selected == "vllm":
-        llm_model = console.input("  LLM Model: ").strip()
-        llm_base_url = console.input(
-            "  LLM Base URL (e.g. http://localhost:8000/v1): "
+    if selected == "litellm":
+        raw_url = console.input(
+            "  Proxy Base URL (e.g. https://litellm.example.com/v1): "
         ).strip()
+        proxy_url = _normalize_proxy_url(raw_url)
+        llm_model = console.input(
+            f"  LLM Model (default: {default_llm}): "
+        ).strip() or default_llm
+        llm_api_key = _prompt_api_key(allow_dummy=False)
+        llm_base_url = proxy_url
+
+        config.set_llm(
+            provider=selected,
+            model=llm_model,
+            api_key=llm_api_key,
+            base_url=llm_base_url or None,
+        )
+
+        console.print()
+        console.print("[bold]Step 3: Embedder Configuration[/bold]")
+        emb_model = console.input(
+            f"  Embedder Model (default: {default_emb}): "
+        ).strip() or default_emb
+        emb_api_key = llm_api_key
+        emb_base_url = proxy_url
+
+        config.set_embedder(
+            provider=selected,
+            model=emb_model,
+            api_key=emb_api_key,
+            base_url=emb_base_url or None,
+        )
+
+        console.print()
+        _print_config_summary(
+            provider=selected,
+            llm_model=llm_model,
+            emb_model=emb_model,
+            base_url=proxy_url,
+            api_key=llm_api_key,
+        )
+        return
+
+    if selected == "vllm":
+        llm_model, llm_base_url, llm_api_key = _prompt_remote_proxy(
+            selected, allow_dummy_key=True
+        )
     else:
         llm_model = (
             console.input(f"  Model (default: {default_llm}): ").strip() or default_llm
@@ -408,18 +568,7 @@ def init(
             ).strip()
             or preset_url
         )
-
-    llm_api_key = None
-    while not llm_api_key:
-        llm_api_key = console.input("  API Key: ").strip()
-        if not llm_api_key:
-            if selected == "vllm":
-                llm_api_key = "dummy"
-                console.print("  [dim]Using 'dummy' for vLLM[/dim]")
-                break
-            console.print(
-                "  [red]API Key is required. Please enter your API key.[/red]"
-            )
+        llm_api_key = _prompt_api_key(allow_dummy=False)
 
     config.set_llm(
         provider=selected,
@@ -429,7 +578,6 @@ def init(
     )
 
     console.print()
-
     console.print("[bold]Step 3: Embedder Configuration[/bold]")
 
     if selected == "vllm":
@@ -437,6 +585,7 @@ def init(
         emb_base_url = console.input(
             "  Embedder Base URL (e.g. http://localhost:8001/v1): "
         ).strip()
+        emb_api_key = _prompt_api_key(allow_dummy=True)
     else:
         emb_model = (
             console.input(f"  Model (default: {default_emb}): ").strip() or default_emb
@@ -447,18 +596,7 @@ def init(
             ).strip()
             or preset_url
         )
-
-    emb_api_key = None
-    while not emb_api_key:
-        emb_api_key = console.input("  API Key: ").strip()
-        if not emb_api_key:
-            if selected == "vllm":
-                emb_api_key = "dummy"
-                console.print("  [dim]Using 'dummy' for vLLM[/dim]")
-                break
-            console.print(
-                "  [red]API Key is required. Please enter your API key.[/red]"
-            )
+        emb_api_key = _prompt_api_key(allow_dummy=False)
 
     config.set_embedder(
         provider=selected,
@@ -468,4 +606,10 @@ def init(
     )
 
     console.print()
-    console.print("[bold green]Configuration saved successfully![/bold green]")
+    _print_config_summary(
+        provider=selected,
+        llm_model=llm_model,
+        emb_model=emb_model,
+        base_url=llm_base_url or emb_base_url,
+        api_key=llm_api_key,
+    )

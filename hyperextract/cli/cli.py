@@ -133,6 +133,7 @@ def main(
                 "🔍 Explore Knowledge Abstract (KA)",
                 [
                     ("he info <ka_path>", "View KA info & stats"),
+                    ("he analyze <ka_path>", "Rank critical / hub nodes"),
                     ("he talk <ka_path> [-i]", "Chat with KA"),
                     ("he search <ka_path> <query>", "Semantic search"),
                     ("he show <ka_path>", "Visualize KA"),
@@ -574,6 +575,86 @@ def info(ka_path: str = typer.Argument(..., help="Knowledge Abstract directory")
     )
 
     console.print(table)
+
+
+@app.command(name="analyze")
+def analyze(
+    ka_path: str = typer.Argument(..., help="Knowledge Abstract directory"),
+    top_k: int = typer.Option(10, "--top-k", "-n", help="Number of ranked nodes"),
+    metric: str = typer.Option(
+        "composite",
+        "--metric",
+        "-m",
+        help="Ranking metric: degree, betweenness, or composite",
+    ),
+    tier: Optional[str] = typer.Option(
+        None,
+        "--tier",
+        help="Filter to tier only (e.g. critical)",
+    ),
+    as_json: bool = typer.Option(False, "--json", help="Output machine-readable JSON"),
+):
+    """Rank critical and most-connected nodes in a graph knowledge abstract."""
+    import json
+
+    logger.info("command=analyze ka_path=%s metric=%s top_k=%d", ka_path, metric, top_k)
+    path = validate_ka_with_data(ka_path)
+    template, lang = get_template_from_ka(path)
+
+    if not as_json:
+        console.print(f"[blue]Knowledge Abstract:[/blue] {ka_path}")
+        console.print(f"[blue]Template:[/blue] {template}")
+        console.print(f"[blue]Metric:[/blue] {metric}")
+        console.print()
+
+    with console.status("[bold blue]Loading Knowledge Abstract..."):
+        try:
+            ka = Template.create(template, lang)
+            ka.load(path)
+        except Exception as e:
+            console.print(f"[red]Error loading Knowledge Abstract:[/red] {e}")
+            raise typer.Exit(1)
+
+    if not hasattr(ka, "analyze_topology"):
+        console.print(
+            "[red]Error:[/red] Topology analysis requires a graph-based knowledge abstract "
+            "(AutoGraph, AutoHypergraph, or temporal/spatial variants)."
+        )
+        raise typer.Exit(1)
+
+    try:
+        all_rankings = ka.analyze_topology(top_k=0, metric=metric)
+        rankings = ka.analyze_topology(top_k=top_k, metric=metric)
+        if tier:
+            rankings = [r for r in rankings if r.tier == tier]
+    except ValueError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+    rows = [r.model_dump() for r in rankings]
+    total_nodes = len(ka.nodes)
+
+    if as_json:
+        from hyperextract.cli.topology_display import rankings_to_json_payload
+
+        payload = rankings_to_json_payload(
+            rows,
+            total_nodes=total_nodes,
+            metric=metric,
+            all_rankings=[r.model_dump() for r in all_rankings],
+        )
+        console.print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return
+
+    from hyperextract.cli.topology_display import print_topology_table
+
+    if not rows:
+        console.print("[yellow]No nodes matched the requested filters.[/yellow]")
+        raise typer.Exit(0)
+
+    print_topology_table(rows, total_nodes=total_nodes, metric=metric, console=console)
+    console.print()
+    console.print(f"[dim]Visualize: he show {ka_path}[/dim]")
 
 
 @app.command(name="search")

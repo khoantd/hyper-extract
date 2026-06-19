@@ -10,6 +10,7 @@ Tools:
     - search          : semantic retrieval over a KA (needs an index)
     - ask             : RAG question-answering over a KA (needs an index)
     - export_obsidian : export a KA to an Obsidian vault
+    - analyze_topology: rank critical / hub nodes in graph KAs
 
 Run it (stdio transport):
 
@@ -188,6 +189,40 @@ def ask(ka_path: str, question: str, top_k: int = 5) -> str:
     return getattr(response, "content", str(response))
 
 
+def analyze_topology(ka_path: str, top_k: int = 10, metric: str = "composite") -> str:
+    """Rank critical and most-connected nodes in a graph knowledge abstract.
+
+    Args:
+        ka_path: Path to the knowledge abstract directory.
+        top_k: Number of ranked nodes to return.
+        metric: ``degree``, ``betweenness``, or ``composite``.
+
+    Returns JSON with rankings and summary KPIs. No index required.
+    """
+    ka = _load_ka(ka_path)
+    if not hasattr(ka, "analyze_topology"):
+        return (
+            "Topology analysis requires a graph-based knowledge abstract "
+            "(graph, hypergraph, or temporal/spatial variants)."
+        )
+    try:
+        all_rankings = ka.analyze_topology(top_k=0, metric=metric)
+        rankings = ka.analyze_topology(top_k=top_k, metric=metric)
+    except ValueError as e:
+        return f"Cannot analyze topology: {e}"
+
+    from hyperextract.cli.topology_display import rankings_to_json_payload
+
+    return _dump(
+        rankings_to_json_payload(
+            [r.model_dump() for r in rankings],
+            total_nodes=len(ka.nodes),
+            metric=metric,
+            all_rankings=[r.model_dump() for r in all_rankings],
+        )
+    )
+
+
 def export_obsidian(
     ka_path: str,
     output: str,
@@ -235,7 +270,7 @@ def build_server():
     from mcp.server.fastmcp import FastMCP
 
     server = FastMCP(SERVER_NAME)
-    for fn in (list_templates, info, search, ask, export_obsidian):
+    for fn in (list_templates, info, search, ask, analyze_topology, export_obsidian):
         server.tool()(fn)
     return server
 

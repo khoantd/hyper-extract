@@ -1,6 +1,6 @@
 # Provider System
 
-Hyper-Extract supports three ways to connect to LLMs: **OpenAI**, **Alibaba Bailian**, and **local vLLM**. All use the same `create_client()` interface — only the first line changes.
+Hyper-Extract supports multiple ways to connect to LLMs: **OpenAI**, **Alibaba Bailian**, **local vLLM**, and **remote LiteLLM proxy**. All use the same `create_client()` interface — only the first line changes.
 
 ---
 
@@ -14,6 +14,7 @@ Hyper-Extract supports three ways to connect to LLMs: **OpenAI**, **Alibaba Bail
 | **Anthropic** | claude-opus-4-8 / claude-sonnet-4-6 / claude-haiku-4-5 | ✅ (tool calling) | ✅ | LLM only — no embeddings API (pair with an OpenAI-compatible embedder). Needs `hyperextract[anthropic]` |
 | **Alibaba Bailian** | qwen-plus / qwen-turbo / qwen3.6-plus / deepseek-r1 | ✅ | ✅ | Works out of the box |
 | **Alibaba Bailian** | qwen-max / deepseek-v3 | ❌ | ❌ | Only `json_object`; `json_schema` not supported |
+| **LiteLLM Proxy** | Any model configured on your proxy | ✅ | ✅ | OpenAI-compatible gateway; single URL for LLM + embedder |
 
 > **Bailian users**: Both qwen-max and deepseek-v3 do not support `json_schema`. If you hit `messages must contain the word 'json'` or get non-JSON output, switch to qwen-plus, qwen-turbo, or deepseek-r1. See [Issue #24](https://github.com/yifanfeng97/Hyper-Extract/issues/24).
 
@@ -36,6 +37,7 @@ Hyper-Extract supports three ways to connect to LLMs: **OpenAI**, **Alibaba Bail
 ## Quick Start by Platform
 
 ```python
+import os
 from hyperextract import create_client
 
 # OpenAI
@@ -57,6 +59,13 @@ llm, emb = create_client(
     llm="vllm:Qwen3.5-9B@http://localhost:8000/v1",
     embedder="vllm:bge-m3@http://localhost:8001/v1",
     api_key="dummy",
+)
+
+# Remote LiteLLM proxy (single URL for LLM + embedder)
+llm, emb = create_client(
+    llm="litellm:gpt-4o-mini@https://litellm.example.com/v1",
+    embedder="litellm:text-embedding-3-small@https://litellm.example.com/v1",
+    api_key=os.environ["LITELLM_API_KEY"],
 )
 ```
 
