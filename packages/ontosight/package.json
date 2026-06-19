@@ -1,0 +1,36 @@
+{
+  "name": "@royalsolution/ontosight",
+  "version": "0.1.1",
+  "description": "Visualize CodeGraph call subgraphs in OntoSight (npx wrapper for ontosight-codegraph)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "ontosight": "bin/ontosight.js"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "AGENTS.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test:cli": "node --test test/cli.test.js"
+  },
+  "keywords": [
+    "codegraph",
+    "ontosight",
+    "visualization",
+    "call-graph"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yifanfeng97/hyper-extract.git",
+    "directory": "packages/ontosight"
+  },
+  "ontosightCodegraphVersion": "0.1.0"
+}
